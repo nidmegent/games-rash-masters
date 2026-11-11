@@ -18,85 +18,32 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
-// ========================================
-// SUPER ADMIN
-// ========================================
-
-const SUPER_ADMINS = [
-  "lgs.esportsgames@gmail.com",
-  "galleria0302@gmail.com"
-];
-
-function isSuperAdmin(user) {
-  return !!user?.email &&
-    SUPER_ADMINS.includes(user.email.toLowerCase());
-}
-
-// ========================================
-// プレイヤー情報をFirestoreに保存
-// ========================================
-
-async function ensureUserProfile(user) {
-  if (!user) return;
-
-  const userRef = doc(db, "users", user.uid);
-  const snapshot = await getDoc(userRef);
-
-  const profileData = {
-    uid: user.uid,
-    email: user.email || "",
-    displayName: user.displayName || "PLAYER",
-    lastLoginAt: serverTimestamp()
-  };
-
-  if (!snapshot.exists()) {
-    await setDoc(userRef, {
-      ...profileData,
-      createdAt: serverTimestamp(),
-      coins: 0,
-      role: "player"
-    });
-  } else {
-    await setDoc(userRef, profileData, {
-      merge: true
-    });
-  }
-}
-
-// ========================================
+// ==============================
 // エラーメッセージ
-// ========================================
+// ==============================
 
 function getErrorMessage(error) {
   const messages = {
-    "auth/email-already-in-use":
-      "このメールアドレスは既に登録されています。",
-    "auth/invalid-email":
-      "メールアドレスの形式が正しくありません。",
-    "auth/weak-password":
-      "パスワードは6文字以上にしてください。",
-    "auth/user-not-found":
-      "アカウントが見つかりません。",
-    "auth/wrong-password":
-      "パスワードが正しくありません。",
-    "auth/invalid-credential":
-      "メールアドレスまたはパスワードが正しくありません。",
-    "auth/invalid-login-credentials":
-      "メールアドレスまたはパスワードが正しくありません。",
-    "auth/popup-closed-by-user":
-      "ログインがキャンセルされました。",
-    "auth/popup-blocked":
-      "ポップアップがブロックされました。",
-    "permission-denied":
-      "データベースへのアクセスが拒否されました。Firestore Rulesを確認してください。"
+    "auth/email-already-in-use": "このメールアドレスは既に登録されています。",
+    "auth/invalid-email": "メールアドレスの形式が正しくありません。",
+    "auth/weak-password": "パスワードは6文字以上にしてください。",
+    "auth/user-not-found": "アカウントが見つかりません。",
+    "auth/wrong-password": "パスワードが正しくありません。",
+    "auth/invalid-credential": "メールアドレスまたはパスワードが正しくありません。",
+    "auth/popup-closed-by-user": "ログインがキャンセルされました。",
+    "auth/popup-blocked": "ポップアップがブロックされました。"
   };
 
-  return messages[error.code] ||
-    "エラーが発生しました。もう一度お試しください。";
+  return messages[error.code] || "エラーが発生しました。もう一度お試しください。";
 }
+
+// ==============================
+// メッセージ表示
+// ==============================
 
 function showMessage(message, type = "error") {
   const element = document.getElementById("message");
@@ -108,9 +55,61 @@ function showMessage(message, type = "error") {
   element.style.display = "block";
 }
 
-// ========================================
+// ==============================
+// プレイヤープロフィール作成・更新
+// ==============================
+
+const profilePromises = new Map();
+
+async function ensureUserProfile(user) {
+  if (!user) return;
+
+  if (profilePromises.has(user.uid)) {
+    return profilePromises.get(user.uid);
+  }
+
+  const task = (async () => {
+    const userRef = doc(db, "users", user.uid);
+    const snapshot = await getDoc(userRef);
+
+    const playerName = user.displayName || user.email || "PLAYER";
+
+    if (!snapshot.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email || "",
+        displayName: playerName,
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp()
+      });
+    } else {
+      const oldData = snapshot.data();
+
+      const updates = {
+        lastLoginAt: serverTimestamp()
+      };
+
+      if (oldData.displayName !== playerName) {
+        updates.displayName = playerName;
+      }
+
+      await updateDoc(userRef, updates);
+    }
+  })();
+
+  profilePromises.set(user.uid, task);
+
+  try {
+    await task;
+  } catch (error) {
+    profilePromises.delete(user.uid);
+    throw error;
+  }
+}
+
+// ==============================
 // メールアドレス登録
-// ========================================
+// ==============================
 
 const registerForm = document.getElementById("registerForm");
 
@@ -132,10 +131,7 @@ if (registerForm) {
       return;
     }
 
-    const button = registerForm.querySelector(
-      "button[type=submit]"
-    );
-
+    const button = registerForm.querySelector("button[type=submit]");
     button.disabled = true;
     button.textContent = "CREATING ACCOUNT...";
 
@@ -157,16 +153,15 @@ if (registerForm) {
     } catch (error) {
       console.error(error);
       showMessage(getErrorMessage(error));
-
       button.disabled = false;
       button.textContent = "CREATE ACCOUNT";
     }
   });
 }
 
-// ========================================
+// ==============================
 // メールアドレスログイン
-// ========================================
+// ==============================
 
 const loginForm = document.getElementById("loginForm");
 
@@ -177,10 +172,7 @@ if (loginForm) {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
-    const button = loginForm.querySelector(
-      "button[type=submit]"
-    );
-
+    const button = loginForm.querySelector("button[type=submit]");
     button.disabled = true;
     button.textContent = "LOGGING IN...";
 
@@ -198,16 +190,15 @@ if (loginForm) {
     } catch (error) {
       console.error(error);
       showMessage(getErrorMessage(error));
-
       button.disabled = false;
       button.textContent = "LOGIN";
     }
   });
 }
 
-// ========================================
+// ==============================
 // Googleログイン
-// ========================================
+// ==============================
 
 const googleButton = document.getElementById("googleLogin");
 
@@ -216,10 +207,7 @@ if (googleButton) {
     googleButton.disabled = true;
 
     try {
-      const result = await signInWithPopup(
-        auth,
-        googleProvider
-      );
+      const result = await signInWithPopup(auth, googleProvider);
 
       await ensureUserProfile(result.user);
 
@@ -228,33 +216,27 @@ if (googleButton) {
     } catch (error) {
       console.error(error);
       showMessage(getErrorMessage(error));
-
       googleButton.disabled = false;
     }
   });
 }
 
-// ========================================
+// ==============================
 // ログアウト
-// ========================================
+// ==============================
 
 const logoutButton = document.getElementById("logout");
 
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-      location.href = "index.html";
-    } catch (error) {
-      console.error(error);
-      showMessage(getErrorMessage(error));
-    }
+    await signOut(auth);
+    location.href = "index.html";
   });
 }
 
-// ========================================
+// ==============================
 // ログイン状態の確認
-// ========================================
+// ==============================
 
 const currentPage = location.pathname;
 
@@ -276,33 +258,23 @@ onAuthStateChanged(auth, async (user) => {
 
     try {
       await ensureUserProfile(user);
-
-      const nameElement =
-        document.getElementById("playerName");
-
-      if (nameElement) {
-        nameElement.textContent =
-          user.displayName || user.email || "PLAYER";
-      }
-
-      const emailElement =
-        document.getElementById("playerEmail");
-
-      if (emailElement) {
-        emailElement.textContent = user.email || "";
-      }
-
-      const roleElement =
-        document.getElementById("playerRole");
-
-      if (roleElement) {
-        roleElement.textContent =
-          isSuperAdmin(user) ? "SUPER ADMIN" : "PLAYER";
-      }
-
     } catch (error) {
-      console.error("ユーザー情報取得エラー:", error);
-      showMessage(getErrorMessage(error));
+      console.error("プロフィールの保存に失敗しました:", error);
+      showMessage("プレイヤー情報の読み込みに失敗しました。再読み込みしてください。");
+      return;
+    }
+
+    const nameElement = document.getElementById("playerName");
+
+    if (nameElement) {
+      nameElement.textContent =
+        user.displayName || user.email || "PLAYER";
+    }
+
+    const emailElement = document.getElementById("playerEmail");
+
+    if (emailElement) {
+      emailElement.textContent = user.email || "";
     }
   }
 
