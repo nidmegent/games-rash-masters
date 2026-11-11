@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090914">
+  <title>カード管理 | RASH MASTERS</title>
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <a class="brand" href="../home.html">
+        <span class="brand-mark">R</span>
+        <span>
+          <strong>RASH MASTERS</strong>
+          <small>ADMIN PANEL</small>
+        </span>
+      </a>
+
+      <div class="sidebar-label">MANAGEMENT</div>
+
+      <nav class="side-nav">
+        <a href="../home.html">⌂ <span>プレイヤーホーム</span></a>
+        <a href="cards.html" class="active">▣ <span>カード管理</span></a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="admin-indicator">
+          <span class="status-dot"></span>
+          SUPER ADMIN
+        </div>
+        <button id="logoutButton" class="logout-button">
+          ログアウト
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">RASH MASTERS / ADMINISTRATION</div>
+          <h1>カード管理</h1>
+        </div>
+        <div class="admin-profile">
+          <span class="profile-icon">♛</span>
+          <span id="adminEmail">確認中...</span>
+        </div>
+      </header>
+
+      <section class="welcome-section">
+        <div>
+          <span class="section-tag">CARD DATABASE</span>
+          <h2>カードマスター</h2>
+          <p>Rash Mastersに登場するカードを管理します。</p>
+        </div>
+        <div class="total-card">
+          <span>REGISTERED CARDS</span>
+          <strong id="cardCount">0</strong>
+        </div>
+      </section>
+
+      <div id="message" class="message" role="status"></div>
+
+      <section class="workspace">
+
+        <div class="editor-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-tag">CARD EDITOR</span>
+              <h2 id="formTitle">新しいカードを登録</h2>
+            </div>
+            <span class="editor-icon">✦</span>
+          </div>
+
+          <form id="cardForm">
+
+            <input type="hidden" id="editingId">
+
+            <div class="form-group">
+              <label for="cardName">カード名 <span>*</span></label>
+              <input
+                type="text"
+                id="cardName"
+                placeholder="例：星界の支配者"
+                maxlength="40"
+                required
+              >
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="rarity">レアリティ <span>*</span></label>
+                <select id="rarity" required>
+                  <option value="N">N</option>
+                  <option value="R">R</option>
+                  <option value="SR">SR</option>
+                  <option value="SSR">SSR</option>
+                  <option value="UR">UR</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="cardType">カードタイプ</label>
+                <select id="cardType">
+                  <option value="ATTACK">ATTACK</option>
+                  <option value="DEFENSE">DEFENSE</option>
+                  <option value="SUPPORT">SUPPORT</option>
+                  <option value="SPECIAL">SPECIAL</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="attack">攻撃力 <span>*</span></label>
+                <input
+                  type="number"
+                  id="attack"
+                  min="0"
+                  max="99999"
+                  value="100"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="hp">HP <span>*</span></label>
+                <input
+                  type="number"
+                  id="hp"
+                  min="0"
+                  max="99999"
+                  value="100"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="description">カード説明</label>
+              <textarea
+                id="description"
+                rows="4"
+                maxlength="500"
+                placeholder="カードの能力や説明を入力..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="imagePath">カード画像パス <span>*</span></label>
+              <input
+                type="text"
+                id="imagePath"
+                placeholder="assets/cards/UR/UR001.png"
+                required
+              >
+              <small class="input-help">
+                GitHubリポジトリ内のassets/cards/から始まるパスを入力
+              </small>
+            </div>
+
+            <div class="preview-area">
+              <div class="preview-label">IMAGE PREVIEW</div>
+              <div class="image-preview" id="imagePreview">
+                <span>画像プレビュー</span>
+              </div>
+              <p id="previewStatus" class="preview-status">
+                画像パスを入力すると表示されます
+              </p>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="saveButton" class="primary-button">
+                ＋ カードを登録
+              </button>
+              <button type="button" id="cancelButton" class="secondary-button hidden">
+                編集をキャンセル
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <div class="list-panel">
+          <div class="panel-heading list-heading">
+            <div>
+              <span class="section-tag">REGISTERED DATA</span>
+              <h2>登録済みカード</h2>
+            </div>
+            <button id="refreshButton" class="refresh-button">
+              ↻ 更新
+            </button>
+          </div>
+
+          <div class="filter-area">
+            <input
+              type="search"
+              id="searchInput"
+              placeholder="カード名で検索..."
+            >
+            <select id="filterRarity">
+              <option value="">全レアリティ</option>
+              <option value="N">N</option>
+              <option value="R">R</option>
+              <option value="SR">SR</option>
+              <option value="SSR">SSR</option>
+              <option value="UR">UR</option>
+            </select>
+          </div>
+
+          <div id="cardList" class="card-list">
+            <div class="loading">カードデータを読み込んでいます...</div>
+          </div>
+        </div>
+
+      </section>
+
+      <footer class="admin-footer">
+        RASH MASTERS ADMINISTRATION SYSTEM
+      </footer>
+    </main>
+  </div>
+
+  <script type="module" src="../js/admin-cards.js"></script>
+</body>
+</html>
