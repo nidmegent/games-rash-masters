@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DECK BUILDER | Rash Masters</title>
+  <link rel="stylesheet" href="css/deck.css">
+</head>
+<body>
+
+<header class="header">
+  <a href="home.html" class="logo">RASH <span>MASTERS</span></a>
+  <div class="header-right">
+    <span class="player-label">DECK BUILDER</span>
+    <a href="home.html" class="back-button">HOME</a>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">BATTLE PREPARATION</p>
+      <h1>DECK <span>BUILDER</span></h1>
+      <p>自分だけの戦略を組み立てよう。</p>
+    </div>
+  </section>
+
+  <section class="deck-management panel">
+    <div class="section-title">
+      <h2>MY DECKS</h2>
+      <span>DECK MANAGEMENT</span>
+    </div>
+
+    <div class="deck-toolbar">
+      <select id="savedDeckSelect">
+        <option value="">保存済みデッキを選択</option>
+      </select>
+      <button id="newDeckButton" class="secondary-button">＋ NEW DECK</button>
+      <button id="deleteDeckButton" class="danger-button" disabled>DELETE</button>
+    </div>
+
+    <div class="deck-name-area">
+      <label for="deckName">DECK NAME</label>
+      <input
+        type="text"
+        id="deckName"
+        maxlength="30"
+        placeholder="例：DRAGON FORCE"
+      >
+    </div>
+  </section>
+
+  <section class="deck-status panel">
+    <div class="deck-status-top">
+      <div>
+        <span class="eyebrow">CURRENT DECK</span>
+        <h2 id="currentDeckTitle">NEW DECK</h2>
+      </div>
+      <div class="deck-count">
+        <strong id="deckCount">0</strong>
+        <span>/ 30 CARDS</span>
+      </div>
+    </div>
+
+    <div class="progress-track">
+      <div id="deckProgress" class="progress-bar"></div>
+    </div>
+
+    <div class="deck-status-bottom">
+      <span id="deckStatusText">カードを選択してください。</span>
+      <button id="saveDeckButton" class="save-button" disabled>
+        SAVE DECK
+      </button>
+    </div>
+  </section>
+
+  <section class="builder-layout">
+
+    <div class="panel collection-panel">
+      <div class="section-title">
+        <h2>CARD COLLECTION</h2>
+        <span>YOUR CARDS</span>
+      </div>
+
+      <input
+        type="text"
+        id="cardSearch"
+        class="search-input"
+        placeholder="カード名で検索..."
+      >
+
+      <div class="filter-row">
+        <button class="filter-button active" data-rarity="ALL">ALL</button>
+        <button class="filter-button" data-rarity="N">N</button>
+        <button class="filter-button" data-rarity="R">R</button>
+        <button class="filter-button" data-rarity="SR">SR</button>
+        <button class="filter-button" data-rarity="SSR">SSR</button>
+        <button class="filter-button" data-rarity="UR">UR</button>
+      </div>
+
+      <div id="collectionList" class="collection-list">
+        <p class="loading">LOADING CARDS...</p>
+      </div>
+    </div>
+
+    <div class="panel selected-panel">
+      <div class="section-title">
+        <h2>DECK LIST</h2>
+        <span>SELECTED CARDS</span>
+      </div>
+
+      <div id="deckList" class="deck-list">
+        <p class="empty">まだカードが選択されていません。</p>
+      </div>
+
+      <div class="deck-total">
+        <span>TOTAL CARDS</span>
+        <strong id="deckTotal">0 / 30</strong>
+      </div>
+    </div>
+
+  </section>
+
+  <div id="message" class="message hidden"></div>
+
+</main>
+
+<script type="module" src="js/deck.js"></script>
+</body>
+</html>
