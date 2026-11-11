@@ -2,8 +2,7 @@
 import { auth, db } from "./firebase.js";
 
 import {
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 
 import {
@@ -11,14 +10,32 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
-const $ = (id) => document.getElementById(id);
+const cardGrid = document.getElementById("cardGrid");
+const loading = document.getElementById("loading");
+const emptyMessage = document.getElementById("emptyMessage");
+const searchInput = document.getElementById("searchInput");
+const rarityFilter = document.getElementById("rarityFilter");
+const resultCount = document.getElementById("resultCount");
 
+const totalCardsEl = document.getElementById("totalCards");
+const ownedKindsEl = document.getElementById("ownedKinds");
+const ownedTotalEl = document.getElementById("ownedTotal");
+
+const modal = document.getElementById("cardModal");
+const modalContent = document.getElementById("modalContent");
+
+let currentUser = null;
 let allCards = [];
+let ownedCards = {};
+let currentMode = "all";
 
-const cardGrid = $("cardGrid");
+function imageUrl(path) {
+  if (!path) return "";
+  return new URL("../" + path.replace(/^\/+/, ""), import.meta.url).href;
+}
 
 function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
@@ -27,170 +44,210 @@ function escapeHTML(value) {
   })[char]);
 }
 
-function imageURL(path) {
-  if (
-    typeof path !== "string" ||
-    !/^assets\/cards\/(?:N|R|SR|SSR|UR)\/[a-zA-Z0-9_.-]+\.(?:png|jpg|jpeg|webp|gif)$/i.test(path)
-  ) return "";
-
-  return new URL(path, document.baseURI).href;
+function getQuantity(cardId) {
+  return Math.max(0, Number(ownedCards[cardId]?.quantity || 0));
 }
 
-function renderCards() {
-  const keyword = $("searchInput").value.trim().toLowerCase();
-  const selectedRarity = $("rarityFilter").value;
-  const selectedType = $("typeFilter").value;
+function updateStats() {
+  const entries = Object.values(ownedCards);
+  const ownedEntries = entries.filter(item => Number(item.quantity) > 0);
 
-  const filtered = allCards.filter((card) => {
-    const matchesName = String(card.name || "")
-      .toLowerCase().includes(keyword);
-
-    const matchesRarity = !selectedRarity ||
-      card.rarity === selectedRarity;
-
-    const matchesType = !selectedType ||
-      card.cardType === selectedType;
-
-    return matchesName && matchesRarity && matchesType;
-  });
-
-  $("visibleCards").textContent = filtered.length;
-
-  if (!filtered.length) {
-    cardGrid.innerHTML = `
-      <div class="empty-state">
-        該当するカードがありません。
-      </div>
-    `;
-    return;
-  }
-
-  cardGrid.innerHTML = filtered.map((card) => {
-    const url = imageURL(card.imagePath);
-
-    return `
-      <article class="game-card" data-id="${escapeHTML(card.id)}">
-        <div class="game-card-image">
-          ${
-            url
-              ? `<img src="${escapeHTML(url)}" alt="${escapeHTML(card.name)}" loading="lazy">`
-              : `<div class="empty-state">NO IMAGE</div>`
-          }
-        </div>
-
-        <div class="game-card-name">${escapeHTML(card.name)}</div>
-
-        <div class="game-card-meta">
-          <span class="rarity rarity-${escapeHTML(card.rarity)}">
-            ${escapeHTML(card.rarity)}
-          </span>
-          <span>${escapeHTML(card.cardType || "ATTACK")}</span>
-        </div>
-
-        <div class="card-stats">
-          <span>ATK ${Number(card.attack) || 0}</span>
-          <span>HP ${Number(card.hp) || 0}</span>
-        </div>
-      </article>
-    `;
-  }).join("");
+  totalCardsEl.textContent = allCards.length;
+  ownedKindsEl.textContent = ownedEntries.length;
+  ownedTotalEl.textContent = ownedEntries.reduce(
+    (sum, item) => sum + Number(item.quantity || 0), 0
+  );
 }
 
-function openCard(card) {
-  const url = imageURL(card.imagePath);
+async function loadData() {
+  if (!currentUser) return;
 
-  $("modalBody").innerHTML = `
-    <div class="modal-detail">
-      ${
-        url
-          ? `<img src="${escapeHTML(url)}" alt="${escapeHTML(card.name)}">`
-          : `<div class="empty-state">NO IMAGE</div>`
-      }
-
-      <div>
-        <span class="rarity rarity-${escapeHTML(card.rarity)}">
-          ${escapeHTML(card.rarity)}
-        </span>
-
-        <h2>${escapeHTML(card.name)}</h2>
-
-        <div class="modal-stat">
-          ATK ${Number(card.attack) || 0}
-          / HP ${Number(card.hp) || 0}
-        </div>
-
-        <p>${escapeHTML(card.description || "説明はありません。")}</p>
-
-        <p>TYPE：${escapeHTML(card.cardType || "ATTACK")}</p>
-      </div>
-    </div>
-  `;
-
-  $("cardModal").classList.remove("hidden");
-}
-
-function closeModal() {
-  $("cardModal").classList.add("hidden");
-}
-
-async function loadCards() {
-  cardGrid.innerHTML = '<div class="loading">カードを読み込んでいます...</div>';
+  loading.classList.remove("hidden");
+  cardGrid.innerHTML = "";
+  emptyMessage.classList.add("hidden");
 
   try {
-    const snapshot = await getDocs(collection(db, "cards"));
+    const [cardsSnapshot, ownedSnapshot] = await Promise.all([
+      getDocs(collection(db, "cards")),
+      getDocs(collection(db, "users", currentUser.uid, "ownedCards"))
+    ]);
 
-    allCards = snapshot.docs.map((item) => ({
-      id: item.id,
-      ...item.data()
+    allCards = cardsSnapshot.docs.map(document => ({
+      id: document.id,
+      ...document.data()
     }));
+
+    ownedCards = {};
+
+    ownedSnapshot.docs.forEach(document => {
+      ownedCards[document.id] = document.data();
+    });
 
     allCards.sort((a, b) => {
       const order = ["UR", "SSR", "SR", "R", "N"];
       return order.indexOf(a.rarity) - order.indexOf(b.rarity);
     });
 
-    $("totalCards").textContent = allCards.length;
-
+    updateStats();
     renderCards();
 
   } catch (error) {
-    console.error(error);
-
-    cardGrid.innerHTML = `
-      <div class="empty-state">
-        カードの読み込みに失敗しました。<br>
-        ページを更新するか、管理者にお問い合わせください。
-      </div>
-    `;
+    console.error("カード読み込みエラー:", error);
+    cardGrid.innerHTML = "";
+    emptyMessage.textContent =
+      "カードデータを読み込めませんでした。Firestore Rulesを確認してください。";
+    emptyMessage.classList.remove("hidden");
+  } finally {
+    loading.classList.add("hidden");
   }
 }
 
-cardGrid.addEventListener("click", (event) => {
-  const cardElement = event.target.closest(".game-card");
-  if (!cardElement) return;
+function renderCards() {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const rarity = rarityFilter.value;
 
-  const card = allCards.find((item) => item.id === cardElement.dataset.id);
-  if (card) openCard(card);
-});
+  let filtered = allCards.filter(card => {
+    const matchesName = String(card.name || "")
+      .toLowerCase().includes(keyword);
 
-$("searchInput").addEventListener("input", renderCards);
-$("rarityFilter").addEventListener("change", renderCards);
-$("typeFilter").addEventListener("change", renderCards);
-$("refreshButton").addEventListener("click", loadCards);
+    const matchesRarity =
+      rarity === "ALL" || card.rarity === rarity;
 
-$("closeModal").addEventListener("click", closeModal);
-$("modalBackdrop").addEventListener("click", closeModal);
+    const quantity = getQuantity(card.id);
+    const matchesMode =
+      currentMode === "all" || quantity > 0;
 
-$("logoutButton").addEventListener("click", async () => {
-  await signOut(auth);
-  location.replace("login.html");
-});
+    return matchesName && matchesRarity && matchesMode;
+  });
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    location.replace("login.html");
+  resultCount.textContent = `${filtered.length} CARDS`;
+  cardGrid.innerHTML = "";
+
+  if (filtered.length === 0) {
+    emptyMessage.classList.remove("hidden");
     return;
   }
 
-  loadCards();
+  emptyMessage.classList.add("hidden");
+
+  filtered.forEach(card => {
+    const quantity = getQuantity(card.id);
+    const item = document.createElement("article");
+    item.className = "card-item";
+
+    const path = imageUrl(card.imagePath);
+
+    item.innerHTML = `
+      <div class="card-image-area">
+        ${
+          path
+            ? `<img class="card-image"
+                src="${escapeHTML(path)}"
+                alt="${escapeHTML(card.name)}"
+                loading="lazy">`
+            : `<div class="image-fallback">NO IMAGE</div>`
+        }
+      </div>
+      <span class="rarity rarity-${escapeHTML(card.rarity)}">
+        ${escapeHTML(card.rarity)}
+      </span>
+      <div class="card-name">${escapeHTML(card.name)}</div>
+      <div class="card-count">
+        所持数：${quantity}
+      </div>
+    `;
+
+    const image = item.querySelector("img");
+
+    if (image) {
+      image.addEventListener("error", () => {
+        const fallback = document.createElement("div");
+        fallback.className = "image-fallback";
+        fallback.textContent = "IMAGE ERROR";
+        image.replaceWith(fallback);
+      });
+    }
+
+    item.addEventListener("click", () => showDetail(card));
+    cardGrid.appendChild(item);
+  });
+}
+
+function showDetail(card) {
+  const quantity = getQuantity(card.id);
+  const path = imageUrl(card.imagePath);
+
+  modalContent.innerHTML = `
+    ${path
+      ? `<img class="modal-image" src="${escapeHTML(path)}"
+           alt="${escapeHTML(card.name)}">`
+      : `<div class="image-fallback">NO IMAGE</div>`
+    }
+
+    <span class="rarity rarity-${escapeHTML(card.rarity)}">
+      ${escapeHTML(card.rarity)}
+    </span>
+
+    <h2 class="modal-name">${escapeHTML(card.name)}</h2>
+
+    <div class="modal-stats">
+      <div class="modal-stat">
+        <small>ATTACK</small>
+        <strong>${Number(card.attack || 0)}</strong>
+      </div>
+      <div class="modal-stat">
+        <small>HP</small>
+        <strong>${Number(card.hp || 0)}</strong>
+      </div>
+      <div class="modal-stat">
+        <small>OWNED</small>
+        <strong>${quantity}</strong>
+      </div>
+    </div>
+
+    <p class="modal-description">
+      ${escapeHTML(card.description || "説明はありません。")}
+    </p>
+
+    <p class="modal-description">
+      CARD TYPE：${escapeHTML(card.cardType || "未設定")}
+    </p>
+  `;
+
+  modal.showModal();
+}
+
+document.querySelectorAll(".tab").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.classList.remove("active");
+    });
+
+    button.classList.add("active");
+    currentMode = button.dataset.mode;
+    renderCards();
+  });
+});
+
+searchInput.addEventListener("input", renderCards);
+rarityFilter.addEventListener("change", renderCards);
+
+document.getElementById("reloadButton").addEventListener("click", loadData);
+
+document.getElementById("closeModal").addEventListener("click", () => {
+  modal.close();
+});
+
+modal.addEventListener("click", event => {
+  if (event.target === modal) modal.close();
+});
+
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  currentUser = user;
+  await loadData();
 });
