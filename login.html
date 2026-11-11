@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOGIN | Rash Masters</title>
+<link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<main class="auth-container">
+  <section class="auth-card">
+
+    <div class="logo">RASH <span>MASTERS</span></div>
+
+    <h1 class="auth-title">WELCOME BACK.</h1>
+    <p class="auth-subtitle">
+      ログインして、あなたの戦いを再開しよう。
+    </p>
+
+    <div id="message" class="message"></div>
+
+    <form id="loginForm">
+
+      <div class="form-group">
+        <label for="email">EMAIL ADDRESS</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="example@email.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">PASSWORD</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button class="auth-button" type="submit">
+        LOGIN
+      </button>
+
+    </form>
+
+    <div class="divider">OR</div>
+
+    <button id="googleLogin" class="google-button">
+      Googleアカウントでログイン
+    </button>
+
+    <div class="auth-footer">
+      アカウントを持っていませんか？<br>
+      <a href="register.html">CREATE ACCOUNT</a>
+      <br><br>
+      <a href="index.html">← BACK TO HOME</a>
+    </div>
+
+  </section>
+</main>
+
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>
