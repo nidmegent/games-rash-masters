@@ -3,85 +3,79 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090914">
-  <title>マイカード | RASH MASTERS</title>
-  <link rel="stylesheet" href="css/player-cards.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カード図鑑 | Rash Masters</title>
+  <link rel="stylesheet" href="css/collection.css">
 </head>
 <body>
 
-<header class="player-header">
-  <a class="game-logo" href="home.html">
-    <span class="logo-mark">R</span>
-    <span>RASH MASTERS<small>MY COLLECTION</small></span>
-  </a>
-
+<header class="topbar">
+  <a href="home.html" class="logo">RASH <span>MASTERS</span></a>
   <nav>
-    <a href="cards.html">カード図鑑</a>
-    <a class="active" href="my-cards.html">マイカード</a>
-    <a href="home.html">ホーム</a>
+    <a href="home.html">HOME</a>
+    <a href="my-cards.html" class="active">CARDS</a>
   </nav>
-
-  <button id="logoutButton" class="logout-btn">ログアウト</button>
 </header>
 
-<main class="page-container">
+<main class="container">
+  <section class="hero">
+    <div class="eyebrow">RASH MASTERS COLLECTION</div>
+    <h1>CARD <span>LIBRARY</span></h1>
+    <p>未知なるカードを集め、あなただけのコレクションを作ろう。</p>
 
-  <section class="page-hero">
-    <span class="eyebrow">YOUR PERSONAL COLLECTION</span>
-    <h1>MY <span>CARDS</span></h1>
-    <p>あなたが手に入れたカードを確認しよう。</p>
-
-    <div class="hero-stats">
-      <div>
-        <strong id="uniqueCount">0</strong>
-        <span>所持カード種類</span>
+    <div class="collection-stats">
+      <div class="stat">
+        <small>登録カード</small>
+        <strong id="totalCards">0</strong>
       </div>
-      <div>
-        <strong id="totalQuantity">0</strong>
-        <span>総所持枚数</span>
+      <div class="stat">
+        <small>所持種類</small>
+        <strong id="ownedKinds">0</strong>
+      </div>
+      <div class="stat">
+        <small>所持総数</small>
+        <strong id="ownedTotal">0</strong>
       </div>
     </div>
   </section>
 
-  <section class="filter-section">
-    <input
-      type="search"
-      id="searchInput"
-      placeholder="カード名を検索..."
-    >
-
-    <select id="rarityFilter">
-      <option value="">全レアリティ</option>
-      <option value="N">N</option>
-      <option value="R">R</option>
-      <option value="SR">SR</option>
-      <option value="SSR">SSR</option>
-      <option value="UR">UR</option>
-    </select>
-  </section>
-
-  <div class="section-heading">
-    <div>
-      <span class="eyebrow">YOUR COLLECTION</span>
-      <h2>OWNED CARDS</h2>
+  <section class="library">
+    <div class="tabs">
+      <button class="tab active" data-mode="all">ALL CARDS</button>
+      <button class="tab" data-mode="owned">MY COLLECTION</button>
     </div>
-    <button id="refreshButton" class="outline-btn">↻ 更新</button>
-  </div>
 
-  <div id="cardGrid" class="card-grid">
-    <div class="loading">所持カードを読み込んでいます...</div>
-  </div>
+    <div class="filters">
+      <input id="searchInput" type="search" placeholder="カード名で検索...">
+      <select id="rarityFilter">
+        <option value="ALL">すべてのレアリティ</option>
+        <option value="N">NORMAL</option>
+        <option value="R">RARE</option>
+        <option value="SR">SUPER RARE</option>
+        <option value="SSR">SPECIAL SUPER RARE</option>
+        <option value="UR">ULTRA RARE</option>
+      </select>
+    </div>
 
+    <div class="result-info">
+      <span id="resultCount">0 CARDS</span>
+      <button id="reloadButton" class="reload-button">↻ 更新</button>
+    </div>
+
+    <div id="loading" class="message">カードデータを読み込み中...</div>
+    <div id="cardGrid" class="card-grid"></div>
+    <div id="emptyMessage" class="message hidden">
+      該当するカードがありません。
+    </div>
+  </section>
 </main>
 
-<div id="cardModal" class="modal hidden">
-  <div class="modal-backdrop" id="modalBackdrop"></div>
-  <div class="modal-content">
-    <button id="closeModal" class="modal-close">×</button>
-    <div id="modalBody"></div>
-  </div>
-</div>
+<dialog id="cardModal" class="card-modal">
+  <button id="closeModal" class="close-modal">×</button>
+  <div id="modalContent"></div>
+</dialog>
+
+<div id="toast" class="toast"></div>
 
 <script type="module" src="js/my-cards.js"></script>
 </body>
