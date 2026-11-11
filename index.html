@@ -1,0 +1,572 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090912">
+<title>Rash Masters | Official</title>
+<meta name="description" content="Rash Masters - Original Online Trading Card Game">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:#090912;
+  --panel:#111120;
+  --purple:#9564ff;
+  --cyan:#65dfff;
+  --gold:#f6c76b;
+  --text:#f5f3ff;
+  --muted:#9997ae;
+}
+
+* {
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans JP',sans-serif;
+  overflow-x:hidden;
+}
+
+a {
+  color:inherit;
+  text-decoration:none;
+}
+
+button {
+  font:inherit;
+  cursor:pointer;
+}
+
+#particles {
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  z-index:0;
+}
+
+.site {
+  position:relative;
+  z-index:1;
+}
+
+header {
+  height:82px;
+  padding:0 7%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid #ffffff12;
+  background:#090912d9;
+  backdrop-filter:blur(15px);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.logo {
+  font-family:'Orbitron',sans-serif;
+  font-size:21px;
+  font-weight:900;
+  letter-spacing:2px;
+}
+
+.logo span {
+  color:var(--purple);
+}
+
+.nav {
+  display:flex;
+  align-items:center;
+  gap:32px;
+  font-size:13px;
+  color:#c1bfd0;
+}
+
+.nav a:hover {
+  color:white;
+}
+
+.header-login {
+  border:1px solid #9564ff80;
+  padding:11px 23px;
+  border-radius:6px;
+  background:#9564ff15;
+  color:white;
+  font-size:12px;
+  font-weight:700;
+}
+
+.hero {
+  min-height:650px;
+  padding:100px 7% 110px;
+  display:flex;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.hero::before {
+  content:"";
+  position:absolute;
+  width:650px;
+  height:650px;
+  right:-100px;
+  top:-100px;
+  background:radial-gradient(circle,#7541db30,transparent 68%);
+  pointer-events:none;
+}
+
+.hero-content {
+  max-width:720px;
+  position:relative;
+  z-index:2;
+}
+
+.eyebrow {
+  color:var(--cyan);
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;
+  letter-spacing:4px;
+  margin-bottom:25px;
+}
+
+.hero h1 {
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(44px,8vw,92px);
+  font-weight:900;
+  line-height:1.1;
+  letter-spacing:-3px;
+  text-shadow:0 0 40px #9564ff35;
+}
+
+.hero h1 span {
+  background:linear-gradient(100deg,#ffffff 10%,#b79aff 50%,#65dfff 100%);
+  color:transparent;
+  background-clip:text;
+}
+
+.hero-description {
+  color:#aaa8bf;
+  line-height:2;
+  font-size:14px;
+  margin-top:30px;
+  max-width:530px;
+}
+
+.hero-actions {
+  display:flex;
+  gap:14px;
+  margin-top:38px;
+  flex-wrap:wrap;
+}
+
+.primary-btn,.secondary-btn {
+  padding:16px 29px;
+  border-radius:5px;
+  font-size:13px;
+  font-weight:800;
+  transition:.25s;
+}
+
+.primary-btn {
+  color:white;
+  background:linear-gradient(110deg,#7547dc,#a26aff);
+  box-shadow:0 8px 35px #8955ef45;
+  border:0;
+}
+
+.primary-btn:hover {
+  transform:translateY(-3px);
+  box-shadow:0 10px 40px #8955ef75;
+}
+
+.secondary-btn {
+  background:#ffffff08;
+  border:1px solid #ffffff2a;
+}
+
+.secondary-btn:hover {
+  background:#ffffff15;
+}
+
+.hero-stats {
+  display:flex;
+  gap:40px;
+  margin-top:65px;
+}
+
+.stat strong {
+  display:block;
+  font-family:'Orbitron',sans-serif;
+  font-size:20px;
+  color:white;
+}
+
+.stat span {
+  display:block;
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:2px;
+  margin-top:7px;
+}
+
+.section {
+  padding:90px 7%;
+}
+
+.section-heading {
+  margin-bottom:38px;
+}
+
+.section-heading small {
+  color:var(--cyan);
+  font-family:'Orbitron',sans-serif;
+  font-size:10px;
+  letter-spacing:4px;
+}
+
+.section-heading h2 {
+  font-family:'Orbitron',sans-serif;
+  font-size:30px;
+  margin-top:12px;
+}
+
+.section-heading p {
+  color:var(--muted);
+  font-size:13px;
+  margin-top:12px;
+}
+
+.feature-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+}
+
+.feature {
+  min-height:190px;
+  background:linear-gradient(145deg,#171528,#10101c);
+  border:1px solid #ffffff12;
+  border-radius:10px;
+  padding:28px;
+  transition:.3s;
+}
+
+.feature:hover {
+  transform:translateY(-5px);
+  border-color:#9564ff75;
+  box-shadow:0 10px 40px #0005;
+}
+
+.feature-icon {
+  font-size:30px;
+  margin-bottom:23px;
+}
+
+.feature h3 {
+  font-family:'Orbitron',sans-serif;
+  font-size:16px;
+  margin-bottom:10px;
+}
+
+.feature p {
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.9;
+}
+
+.feature-label {
+  color:var(--purple);
+  font-size:9px;
+  letter-spacing:2px;
+  margin-top:15px;
+}
+
+.world {
+  margin:20px 7% 100px;
+  padding:65px 35px;
+  border:1px solid #9564ff35;
+  border-radius:12px;
+  background:
+    radial-gradient(ellipse at 80% 20%,#7041c52a,transparent 55%),
+    linear-gradient(120deg,#171326,#10101c);
+  text-align:center;
+}
+
+.world h2 {
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(23px,4vw,38px);
+  margin-bottom:20px;
+}
+
+.world p {
+  color:#aaa8bf;
+  font-size:13px;
+  line-height:2;
+}
+
+.world .primary-btn {
+  display:inline-block;
+  margin-top:28px;
+}
+
+footer {
+  border-top:1px solid #ffffff12;
+  padding:30px 7%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:var(--muted);
+  font-size:11px;
+  gap:15px;
+}
+
+footer strong {
+  font-family:'Orbitron',sans-serif;
+  color:white;
+  letter-spacing:2px;
+}
+
+@media(max-width:750px) {
+  header {
+    height:68px;
+    padding:0 5%;
+  }
+
+  .logo {
+    font-size:16px;
+  }
+
+  .nav {
+    gap:12px;
+  }
+
+  .nav a:not(.header-login) {
+    display:none;
+  }
+
+  .header-login {
+    padding:9px 14px;
+    font-size:10px;
+  }
+
+  .hero {
+    min-height:590px;
+    padding:90px 6%;
+  }
+
+  .hero h1 {
+    letter-spacing:-2px;
+  }
+
+  .hero-stats {
+    gap:22px;
+  }
+
+  .stat strong {
+    font-size:16px;
+  }
+
+  .section {
+    padding:65px 6%;
+  }
+
+  .feature-grid {
+    grid-template-columns:1fr;
+  }
+
+  .feature {
+    min-height:155px;
+  }
+
+  .world {
+    margin:10px 5% 65px;
+    padding:45px 20px;
+  }
+
+  footer {
+    flex-direction:column;
+    text-align:center;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {
+    animation-duration:.01ms!important;
+    transition-duration:.01ms!important;
+  }
+}
+</style>
+</head>
+
+<body>
+<canvas id="particles"></canvas>
+
+<div class="site">
+
+<header>
+  <a href="index.html" class="logo">RASH <span>MASTERS</span></a>
+
+  <nav class="nav">
+    <a href="#about">ABOUT</a>
+    <a href="#features">FEATURES</a>
+    <a href="#world">WORLD</a>
+    <a href="login.html" class="header-login">LOGIN</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="hero-content">
+    <div class="eyebrow">ORIGINAL ONLINE CARD GAME</div>
+
+    <h1>
+      RASH<br>
+      <span>MASTERS.</span>
+    </h1>
+
+    <p class="hero-description">
+      集めろ。構築しろ。勝利をつかめ。<br>
+      無限の可能性を秘めたカードたちとともに、
+      あなただけの戦略で頂点を目指そう。
+    </p>
+
+    <div class="hero-actions">
+      <a href="login.html" class="primary-btn">START YOUR JOURNEY →</a>
+      <a href="#features" class="secondary-btn">EXPLORE GAME</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <strong>1 VS 1</strong>
+        <span>ONLINE BATTLE</span>
+      </div>
+      <div class="stat">
+        <strong>5 RANKS</strong>
+        <span>CARD RARITY</span>
+      </div>
+      <div class="stat">
+        <strong>30 CARDS</strong>
+        <span>YOUR DECK</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="section-heading">
+    <small>DISCOVER THE GAME</small>
+    <h2>YOUR STORY BEGINS.</h2>
+    <p>Rash Mastersで体験できる、3つのメインコンテンツ。</p>
+  </div>
+
+  <div class="feature-grid" id="features">
+    <article class="feature">
+      <div class="feature-icon">⚔️</div>
+      <h3>ONLINE BATTLE</h3>
+      <p>世界のプレイヤーと1対1のターン制バトル。戦略を駆使して勝利をつかもう。</p>
+      <div class="feature-label">COMPETE WITH PLAYERS</div>
+    </article>
+
+    <article class="feature">
+      <div class="feature-icon">✦</div>
+      <h3>CARD COLLECTION</h3>
+      <p>個性豊かなカードを収集。NからURまで、さまざまなカードを集めよう。</p>
+      <div class="feature-label">COLLECT YOUR CARDS</div>
+    </article>
+
+    <article class="feature">
+      <div class="feature-icon">✧</div>
+      <h3>GACHA SYSTEM</h3>
+      <p>新たなカードとの出会い。豪華な召喚演出とともにレアカードを手に入れよう。</p>
+      <div class="feature-label">DISCOVER NEW POWER</div>
+    </article>
+  </div>
+</section>
+
+<section class="world" id="world">
+  <h2>BUILD YOUR OWN LEGEND.</h2>
+  <p>
+    あなたの選択が、戦局を変える。<br>
+    最強のデッキを作り、Rash Mastersの世界へ。
+  </p>
+  <a href="login.html" class="primary-btn">JOIN THE GAME →</a>
+</section>
+</main>
+
+<footer>
+  <strong>RASH MASTERS</strong>
+  <span>© 2026 RASH MASTERS. ALL RIGHTS RESERVED.</span>
+</footer>
+
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("particles");
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  let particles = [];
+  let width = 0;
+  let height = 0;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    particles = Array.from(
+      {length: Math.min(65, Math.floor(width / 18))},
+      () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: Math.random() * 2 + .4,
+        speed: Math.random() * .35 + .1,
+        alpha: Math.random() * .5 + .15
+      })
+    );
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(165,130,255,${p.alpha})`;
+      ctx.fill();
+
+      if (!reduceMotion) {
+        p.y -= p.speed;
+        p.x += Math.sin(p.y * .01) * .15;
+
+        if (p.y < -5) {
+          p.y = height + 5;
+          p.x = Math.random() * width;
+        }
+      }
+    });
+
+    if (!reduceMotion) {
+      requestAnimationFrame(animate);
+    }
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  animate();
+})();
+</script>
+</body>
+</html>
