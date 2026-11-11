@@ -1,7 +1,8 @@
 
 import {
   auth,
-  googleProvider
+  googleProvider,
+  db
 } from "./firebase.js";
 
 import {
@@ -13,20 +14,88 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 
-// Error messages
-function getErrorMessage(error) {
-  const messages = {
-    "auth/email-already-in-use": "このメールアドレスは既に登録されています。",
-    "auth/invalid-email": "メールアドレスの形式が正しくありません。",
-    "auth/weak-password": "パスワードは6文字以上にしてください。",
-    "auth/user-not-found": "アカウントが見つかりません。",
-    "auth/wrong-password": "パスワードが正しくありません。",
-    "auth/invalid-credential": "メールアドレスまたはパスワードが正しくありません。",
-    "auth/popup-closed-by-user": "ログインがキャンセルされました。",
-    "auth/popup-blocked": "ポップアップがブロックされました。"
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+// ========================================
+// SUPER ADMIN
+// ========================================
+
+const SUPER_ADMINS = [
+  "lgs.esportsgames@gmail.com",
+  "galleria0302@gmail.com"
+];
+
+function isSuperAdmin(user) {
+  return !!user?.email &&
+    SUPER_ADMINS.includes(user.email.toLowerCase());
+}
+
+// ========================================
+// プレイヤー情報をFirestoreに保存
+// ========================================
+
+async function ensureUserProfile(user) {
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+  const snapshot = await getDoc(userRef);
+
+  const profileData = {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "PLAYER",
+    lastLoginAt: serverTimestamp()
   };
 
-  return messages[error.code] || "エラーが発生しました。もう一度お試しください。";
+  if (!snapshot.exists()) {
+    await setDoc(userRef, {
+      ...profileData,
+      createdAt: serverTimestamp(),
+      coins: 0,
+      role: "player"
+    });
+  } else {
+    await setDoc(userRef, profileData, {
+      merge: true
+    });
+  }
+}
+
+// ========================================
+// エラーメッセージ
+// ========================================
+
+function getErrorMessage(error) {
+  const messages = {
+    "auth/email-already-in-use":
+      "このメールアドレスは既に登録されています。",
+    "auth/invalid-email":
+      "メールアドレスの形式が正しくありません。",
+    "auth/weak-password":
+      "パスワードは6文字以上にしてください。",
+    "auth/user-not-found":
+      "アカウントが見つかりません。",
+    "auth/wrong-password":
+      "パスワードが正しくありません。",
+    "auth/invalid-credential":
+      "メールアドレスまたはパスワードが正しくありません。",
+    "auth/invalid-login-credentials":
+      "メールアドレスまたはパスワードが正しくありません。",
+    "auth/popup-closed-by-user":
+      "ログインがキャンセルされました。",
+    "auth/popup-blocked":
+      "ポップアップがブロックされました。",
+    "permission-denied":
+      "データベースへのアクセスが拒否されました。Firestore Rulesを確認してください。"
+  };
+
+  return messages[error.code] ||
+    "エラーが発生しました。もう一度お試しください。";
 }
 
 function showMessage(message, type = "error") {
@@ -39,7 +108,10 @@ function showMessage(message, type = "error") {
   element.style.display = "block";
 }
 
-// Email Registration
+// ========================================
+// メールアドレス登録
+// ========================================
+
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
@@ -60,7 +132,10 @@ if (registerForm) {
       return;
     }
 
-    const button = registerForm.querySelector("button[type=submit]");
+    const button = registerForm.querySelector(
+      "button[type=submit]"
+    );
+
     button.disabled = true;
     button.textContent = "CREATING ACCOUNT...";
 
@@ -75,17 +150,24 @@ if (registerForm) {
         displayName: name
       });
 
+      await ensureUserProfile(result.user);
+
       location.href = "home.html";
 
     } catch (error) {
+      console.error(error);
       showMessage(getErrorMessage(error));
+
       button.disabled = false;
       button.textContent = "CREATE ACCOUNT";
     }
   });
 }
 
-// Email Login
+// ========================================
+// メールアドレスログイン
+// ========================================
+
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
@@ -95,24 +177,38 @@ if (loginForm) {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
-    const button = loginForm.querySelector("button[type=submit]");
+    const button = loginForm.querySelector(
+      "button[type=submit]"
+    );
+
     button.disabled = true;
     button.textContent = "LOGGING IN...";
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      await ensureUserProfile(result.user);
 
       location.href = "home.html";
 
     } catch (error) {
+      console.error(error);
       showMessage(getErrorMessage(error));
+
       button.disabled = false;
       button.textContent = "LOGIN";
     }
   });
 }
 
-// Google Login
+// ========================================
+// Googleログイン
+// ========================================
+
 const googleButton = document.getElementById("googleLogin");
 
 if (googleButton) {
@@ -120,60 +216,97 @@ if (googleButton) {
     googleButton.disabled = true;
 
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(
+        auth,
+        googleProvider
+      );
+
+      await ensureUserProfile(result.user);
+
       location.href = "home.html";
 
     } catch (error) {
+      console.error(error);
       showMessage(getErrorMessage(error));
+
       googleButton.disabled = false;
     }
   });
 }
 
-// Logout
+// ========================================
+// ログアウト
+// ========================================
+
 const logoutButton = document.getElementById("logout");
 
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
-    await signOut(auth);
-    location.href = "index.html";
+    try {
+      await signOut(auth);
+      location.href = "index.html";
+    } catch (error) {
+      console.error(error);
+      showMessage(getErrorMessage(error));
+    }
   });
 }
 
-// Auth state
+// ========================================
+// ログイン状態の確認
+// ========================================
+
 const currentPage = location.pathname;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
 
-  if (
+  const isHomePage =
     currentPage.endsWith("/home.html") ||
-    currentPage === "/home.html"
-  ) {
+    currentPage === "/home.html";
+
+  const isAuthPage =
+    currentPage.endsWith("/login.html") ||
+    currentPage.endsWith("/register.html");
+
+  if (isHomePage) {
     if (!user) {
       location.href = "login.html";
       return;
     }
 
-    const nameElement = document.getElementById("playerName");
+    try {
+      await ensureUserProfile(user);
 
-    if (nameElement) {
-      nameElement.textContent =
-        user.displayName || user.email || "PLAYER";
-    }
+      const nameElement =
+        document.getElementById("playerName");
 
-    const emailElement = document.getElementById("playerEmail");
+      if (nameElement) {
+        nameElement.textContent =
+          user.displayName || user.email || "PLAYER";
+      }
 
-    if (emailElement) {
-      emailElement.textContent = user.email || "";
+      const emailElement =
+        document.getElementById("playerEmail");
+
+      if (emailElement) {
+        emailElement.textContent = user.email || "";
+      }
+
+      const roleElement =
+        document.getElementById("playerRole");
+
+      if (roleElement) {
+        roleElement.textContent =
+          isSuperAdmin(user) ? "SUPER ADMIN" : "PLAYER";
+      }
+
+    } catch (error) {
+      console.error("ユーザー情報取得エラー:", error);
+      showMessage(getErrorMessage(error));
     }
   }
 
-  if (
-    currentPage.endsWith("/login.html") ||
-    currentPage.endsWith("/register.html")
-  ) {
-    if (user) {
-      location.href = "home.html";
-    }
+  if (isAuthPage && user) {
+    location.href = "home.html";
   }
 });
