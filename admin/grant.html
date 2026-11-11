@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CARD GRANT | Rash Masters</title>
+  <link rel="stylesheet" href="../css/grant.css">
+</head>
+<body>
+
+  <header class="header">
+    <a href="dashboard.html" class="logo">RASH <span>MASTERS</span></a>
+    <div class="header-right">
+      <span class="admin-label">SUPER ADMIN</span>
+      <button id="logout" class="logout-button">LOGOUT</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ADMINISTRATION / PLAYER MANAGEMENT</p>
+        <h1>CARD <span>GRANT</span></h1>
+        <p class="description">プレイヤーにカードを付与します。</p>
+      </div>
+      <a href="dashboard.html" class="back-button">← DASHBOARD</a>
+    </div>
+
+    <section class="panel">
+      <div class="section-heading">
+        <span class="section-number">01</span>
+        <div>
+          <h2>SELECT PLAYER</h2>
+          <p>付与先のプレイヤーを選択してください。</p>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        id="playerSearch"
+        class="search-input"
+        placeholder="プレイヤー名・メールアドレスで検索"
+      >
+
+      <div id="playerList" class="player-list">
+        <p class="loading">LOADING PLAYERS...</p>
+      </div>
+
+      <div id="selectedPlayer" class="selected-player hidden">
+        <div>
+          <span class="selected-label">SELECTED PLAYER</span>
+          <strong id="selectedPlayerName">-</strong>
+          <small id="selectedPlayerEmail">-</small>
+        </div>
+        <button id="clearPlayer" class="clear-button">変更</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <span class="section-number">02</span>
+        <div>
+          <h2>SELECT CARD</h2>
+          <p>付与するカードを選択してください。</p>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        id="cardSearch"
+        class="search-input"
+        placeholder="カード名で検索"
+      >
+
+      <div id="cardList" class="card-list">
+        <p class="loading">LOADING CARDS...</p>
+      </div>
+
+      <div id="selectedCard" class="selected-card hidden">
+        <img id="selectedCardImage" src="" alt="">
+        <div>
+          <span class="selected-label">SELECTED CARD</span>
+          <strong id="selectedCardName">-</strong>
+          <small id="selectedCardRarity">-</small>
+        </div>
+        <button id="clearCard" class="clear-button">変更</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <span class="section-number">03</span>
+        <div>
+          <h2>GRANT QUANTITY</h2>
+          <p>付与する枚数を指定してください。</p>
+        </div>
+      </div>
+
+      <div class="quantity-control">
+        <label for="quantity">付与枚数</label>
+        <div class="quantity-input-wrap">
+          <input
+            type="number"
+            id="quantity"
+            value="1"
+            min="1"
+            max="999"
+          >
+          <span>CARDS</span>
+        </div>
+      </div>
+
+      <label class="memo-label" for="grantMemo">付与メモ（任意）</label>
+      <textarea
+        id="grantMemo"
+        placeholder="例：イベント報酬 / 初回ログイン特典"
+        maxlength="200"
+      ></textarea>
+
+      <button id="grantButton" class="grant-button" disabled>
+        <span>✦</span> GRANT CARD
+      </button>
+
+      <p class="notice">
+        ※付与操作は取り消しできません。プレイヤーとカードを確認してから実行してください。
+      </p>
+
+      <div id="message" class="message hidden"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <span class="section-number">04</span>
+        <div>
+          <h2>GRANT HISTORY</h2>
+          <p>過去のカード付与履歴です。</p>
+        </div>
+      </div>
+
+      <div id="historyList" class="history-list">
+        <p class="loading">LOADING HISTORY...</p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/admin-grant.js"></script>
+</body>
+</html>
