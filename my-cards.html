@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090914">
+  <title>マイカード | RASH MASTERS</title>
+  <link rel="stylesheet" href="css/player-cards.css">
+</head>
+<body>
+
+<header class="player-header">
+  <a class="game-logo" href="home.html">
+    <span class="logo-mark">R</span>
+    <span>RASH MASTERS<small>MY COLLECTION</small></span>
+  </a>
+
+  <nav>
+    <a href="cards.html">カード図鑑</a>
+    <a class="active" href="my-cards.html">マイカード</a>
+    <a href="home.html">ホーム</a>
+  </nav>
+
+  <button id="logoutButton" class="logout-btn">ログアウト</button>
+</header>
+
+<main class="page-container">
+
+  <section class="page-hero">
+    <span class="eyebrow">YOUR PERSONAL COLLECTION</span>
+    <h1>MY <span>CARDS</span></h1>
+    <p>あなたが手に入れたカードを確認しよう。</p>
+
+    <div class="hero-stats">
+      <div>
+        <strong id="uniqueCount">0</strong>
+        <span>所持カード種類</span>
+      </div>
+      <div>
+        <strong id="totalQuantity">0</strong>
+        <span>総所持枚数</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="filter-section">
+    <input
+      type="search"
+      id="searchInput"
+      placeholder="カード名を検索..."
+    >
+
+    <select id="rarityFilter">
+      <option value="">全レアリティ</option>
+      <option value="N">N</option>
+      <option value="R">R</option>
+      <option value="SR">SR</option>
+      <option value="SSR">SSR</option>
+      <option value="UR">UR</option>
+    </select>
+  </section>
+
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">YOUR COLLECTION</span>
+      <h2>OWNED CARDS</h2>
+    </div>
+    <button id="refreshButton" class="outline-btn">↻ 更新</button>
+  </div>
+
+  <div id="cardGrid" class="card-grid">
+    <div class="loading">所持カードを読み込んでいます...</div>
+  </div>
+
+</main>
+
+<div id="cardModal" class="modal hidden">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-content">
+    <button id="closeModal" class="modal-close">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script type="module" src="js/my-cards.js"></script>
+</body>
+</html>
