@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080914">
+  <title>BATTLE PREPARATION | Rash Masters</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="css/battle.css">
+</head>
+<body>
+  <header class="battle-header">
+    <a class="brand" href="home.html">RASH <span>MASTERS</span></a>
+    <div class="header-right">
+      <span class="status"><i></i> BATTLE SYSTEM / PHASE 01</span>
+      <a href="home.html" class="back-link">HOME</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">PREPARE FOR THE DUEL</div>
+      <h1>BATTLE <span>GATE</span></h1>
+      <p>対戦モードと使用するデッキを選択しよう。</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">01 / GAME MODE</span>
+          <h2>対戦モード</h2>
+        </div>
+        <span class="step">01</span>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode-card selected" data-mode="casual" type="button">
+          <span class="mode-icon">⚔</span>
+          <strong>CASUAL</strong>
+          <small>カジュアルマッチ</small>
+          <em>ランク変動なし</em>
+        </button>
+
+        <button class="mode-card" data-mode="ranked" type="button">
+          <span class="mode-icon">♛</span>
+          <strong>RANKED</strong>
+          <small>ランクマッチ</small>
+          <em>ランクポイント変動あり</em>
+        </button>
+
+        <button class="mode-card" data-mode="friend" type="button">
+          <span class="mode-icon">✦</span>
+          <strong>FRIEND</strong>
+          <small>フレンド対戦</small>
+          <em>6桁ルームコード方式</em>
+        </button>
+      </div>
+
+      <p id="modeDescription" class="mode-description">
+        ランクを気にせず対戦を楽しめるモードです。
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">02 / SELECT YOUR DECK</span>
+          <h2>使用デッキ</h2>
+        </div>
+        <span class="step">02</span>
+      </div>
+
+      <div class="deck-toolbar">
+        <label for="deckSelect">保存済みデッキ</label>
+        <select id="deckSelect">
+          <option value="">デッキを読み込んでいます...</option>
+        </select>
+        <a href="deck.html" class="outline-link">デッキを編集</a>
+      </div>
+
+      <div id="deckStatus" class="notice">
+        デッキ情報を確認しています...
+      </div>
+
+      <div class="deck-preview">
+        <div class="preview-top">
+          <div>
+            <span class="eyebrow">DECK PREVIEW</span>
+            <h3 id="deckName">デッキ未選択</h3>
+          </div>
+          <div class="deck-total">
+            <strong id="deckCount">0</strong>
+            <span>/ 30</span>
+          </div>
+        </div>
+
+        <div id="deckCards" class="deck-cards">
+          <p class="empty">デッキを選択してください。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel launch-panel">
+      <div>
+        <span class="eyebrow">03 / READY CHECK</span>
+        <h2>準備完了？</h2>
+        <p>有効な30枚デッキを選択すると、対戦準備が完了します。</p>
+      </div>
+
+      <button id="readyButton" class="ready-button" type="button" disabled>
+        対戦準備を完了する <span>→</span>
+      </button>
+    </section>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <p class="footnote">
+      ※ 現在は対戦準備画面の第1段階です。
+      オンラインマッチング・バトル処理は次の開発工程で実装します。
+    </p>
+  </main>
+
+  <script type="module" src="js/battle.js"></script>
+</body>
+</html>
