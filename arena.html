@@ -7,131 +7,175 @@
   <meta name="theme-color" content="#080914">
   <title>BATTLE ARENA | Rash Masters</title>
   <link rel="icon" href="favicon.ico">
-  <link rel="stylesheet" href="css/arena.css">
+  <link rel="stylesheet" href="css/arena.css?v=2">
 </head>
 <body>
+
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
 
 <header class="arena-header">
   <a href="home.html" class="brand">
     RASH <span>MASTERS</span>
   </a>
-  <span class="header-label">BATTLE ARENA / CPU TEST</span>
+
+  <div class="header-center">
+    <span class="live-dot"></span>
+    CPU BATTLE / VER.2
+  </div>
+
   <a href="battle.html" class="back-link">EXIT</a>
 </header>
 
-<main class="arena">
+<main class="arena-layout">
 
-  <section class="fighter enemy">
-    <div class="fighter-top">
-      <div>
-        <small>OPPONENT</small>
-        <h2>CPU CHALLENGER</h2>
+  <div class="battle-column" id="battleColumn">
+
+    <section class="fighter enemy">
+      <div class="fighter-top">
+        <div>
+          <span class="eyebrow">OPPONENT / CPU</span>
+          <h2>SHADOW CHALLENGER</h2>
+        </div>
+        <div class="hp-value">
+          <strong id="enemyHp">10000</strong>
+          <small>/ 10000 HP</small>
+        </div>
       </div>
-      <div class="hp-value">
-        <span id="enemyHp">10000</span> / 10000 HP
+
+      <div class="hp-track">
+        <div id="enemyHpBar" class="hp-fill"></div>
       </div>
-    </div>
-    <div class="hp-track">
-      <div id="enemyHpBar" class="hp-fill"></div>
-    </div>
-    <div class="fighter-meta">
-      <span>手札 <b id="enemyHandCount">5</b>枚</span>
-      <span>デッキ <b id="enemyDeckCount">5</b>枚</span>
-      <span>マナ <b id="enemyMana">1</b></span>
-    </div>
-  </section>
 
-  <section class="field enemy-field">
-    <div class="field-label">ENEMY FIELD</div>
-    <div id="enemySlots" class="slots"></div>
-  </section>
-
-  <section class="center-panel">
-    <div>
-      <small>TURN</small>
-      <strong id="turnNumber">1</strong>
-    </div>
-    <div>
-      <small>PHASE</small>
-      <strong id="phaseName">MAIN</strong>
-    </div>
-    <div>
-      <small>ACTIVE PLAYER</small>
-      <strong id="activePlayer">YOU</strong>
-    </div>
-    <div>
-      <small>TIME</small>
-      <strong id="turnTimer">120</strong>
-    </div>
-  </section>
-
-  <section class="field player-field">
-    <div class="field-label">YOUR FIELD</div>
-    <div id="playerSlots" class="slots"></div>
-  </section>
-
-  <section class="fighter player">
-    <div class="fighter-top">
-      <div>
-        <small>PLAYER</small>
-        <h2>YOUR HERO</h2>
+      <div class="fighter-meta">
+        <span>HAND <b id="enemyHandCount">5</b></span>
+        <span>DECK <b id="enemyDeckCount">5</b></span>
+        <span>MANA <b id="enemyMana">1</b></span>
       </div>
-      <div class="hp-value">
-        <span id="playerHp">10000</span> / 10000 HP
+    </section>
+
+    <section class="field enemy-field">
+      <div class="field-heading">
+        <span>ENEMY TERRITORY</span>
+        <span>MONSTER ZONE / 5</span>
       </div>
-    </div>
-    <div class="hp-track">
-      <div id="playerHpBar" class="hp-fill"></div>
-    </div>
-    <div class="fighter-meta">
-      <span>マナ <b id="playerMana">1</b> / <b id="playerMaxMana">1</b></span>
-      <span>デッキ <b id="playerDeckCount">5</b>枚</span>
-      <span>召喚 <b id="summonCount">0</b> / 2</span>
-    </div>
-  </section>
+      <div id="enemySlots" class="slots"></div>
+    </section>
 
-  <section class="hand-panel">
-    <div class="section-heading">
-      <div>
-        <small>YOUR HAND</small>
-        <h2>手札</h2>
+    <section class="center-panel">
+      <div class="center-stat">
+        <small>TURN</small>
+        <strong id="turnNumber">1</strong>
       </div>
-      <span id="handCount">0 / 7</span>
-    </div>
-    <div id="playerHand" class="hand"></div>
-  </section>
 
-  <section class="action-panel">
-    <div id="battleMessage" class="battle-message">
-      カードを選択して召喚しよう！
-    </div>
+      <div class="center-stat">
+        <small>PHASE</small>
+        <strong id="phaseName">MAIN</strong>
+      </div>
 
-    <div class="actions">
-      <button id="attackButton" type="button">
-        攻撃フェーズへ
-      </button>
-      <button id="endTurnButton" type="button">
-        ターン終了
-      </button>
-    </div>
-  </section>
+      <div class="center-stat">
+        <small>ACTIVE</small>
+        <strong id="activePlayer">YOU</strong>
+      </div>
 
-  <section class="log-panel">
-    <h3>BATTLE LOG</h3>
-    <div id="battleLog"></div>
-  </section>
+      <div class="center-stat">
+        <small>TIMER</small>
+        <strong id="turnTimer">120</strong>
+      </div>
+    </section>
+
+    <section class="field player-field">
+      <div class="field-heading">
+        <span>YOUR TERRITORY</span>
+        <span>MONSTER ZONE / 5</span>
+      </div>
+      <div id="playerSlots" class="slots"></div>
+    </section>
+
+    <section class="fighter player">
+      <div class="fighter-top">
+        <div>
+          <span class="eyebrow">PLAYER / YOUR HERO</span>
+          <h2>RASH MASTER</h2>
+        </div>
+        <div class="hp-value">
+          <strong id="playerHp">10000</strong>
+          <small>/ 10000 HP</small>
+        </div>
+      </div>
+
+      <div class="hp-track">
+        <div id="playerHpBar" class="hp-fill"></div>
+      </div>
+
+      <div class="fighter-meta">
+        <span>MANA <b id="playerMana">1</b> / <b id="playerMaxMana">1</b></span>
+        <span>DECK <b id="playerDeckCount">5</b></span>
+        <span>SUMMON <b id="summonCount">0</b> / 2</span>
+      </div>
+    </section>
+
+    <section class="hand-panel">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">YOUR HAND</span>
+          <h2>手札</h2>
+        </div>
+        <span id="handCount" class="hand-count">0 / 7</span>
+      </div>
+
+      <div id="playerHand" class="hand"></div>
+    </section>
+
+    <section class="action-panel">
+      <div id="battleMessage" class="battle-message" role="status" aria-live="polite">
+        カードを召喚して戦おう！
+      </div>
+
+      <div class="actions">
+        <button id="attackButton" type="button">
+          ⚔ 攻撃フェーズ
+        </button>
+        <button id="endTurnButton" type="button">
+          ターン終了
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <aside class="battle-sidebar">
+    <section class="log-panel">
+      <div class="log-heading">
+        <span class="eyebrow">COMBAT RECORD</span>
+        <h2>⚔ BATTLE LOG</h2>
+        <p>召喚・攻撃・破壊の記録</p>
+      </div>
+      <div id="battleLog" class="log-content" aria-live="polite"></div>
+    </section>
+
+    <section class="rule-panel">
+      <span class="eyebrow">BATTLE RULES</span>
+      <p>⚔ 攻撃側は反撃ダメージなし</p>
+      <p>✦ 召喚ターンは攻撃不可</p>
+      <p>◆ 1ターン最大2体召喚</p>
+      <p>⏳ 制限時間120秒</p>
+    </section>
+  </aside>
 
 </main>
 
+<div id="effectLayer" class="effect-layer" aria-hidden="true"></div>
+
 <div id="resultOverlay" class="result-overlay hidden">
   <div class="result-box">
-    <small>BATTLE RESULT</small>
+    <span class="eyebrow">BATTLE RESULT</span>
     <h1 id="resultTitle">VICTORY</h1>
     <p id="resultDescription"></p>
     <a href="battle.html">対戦準備画面へ戻る</a>
   </div>
 </div>
 
-<script type="module" src="js/arena.js"></script>
+<script type="module" src="js/arena.js?v=2"></script>
 </body>
 </html>
