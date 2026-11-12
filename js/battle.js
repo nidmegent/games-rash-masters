@@ -1,3 +1,4 @@
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -9,13 +10,27 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
+// ==============================
+// GAME RULES
+// ==============================
+
+const DECK_SIZE = 10;
+const MAX_SAME_CARD = 3;
+
 const $ = (id) => document.getElementById(id);
+
+// ==============================
+// STATE
+// ==============================
 
 let currentUser = null;
 let decks = [];
 let cardMap = new Map();
+
 let selectedMode = "casual";
 let selectedDeck = null;
+
+const STORAGE_KEY = "rashMastersBattlePreparation";
 
 const modeDescriptions = {
   casual: "ランクを気にせず対戦を楽しめるモードです。",
@@ -23,93 +38,177 @@ const modeDescriptions = {
   friend: "6桁のルームコードを使ってフレンドと対戦するモードです。"
 };
 
-// 画像URL
+// ==============================
+// IMAGE URL
+// ==============================
+
 function safeImage(path) {
+  if (typeof path !== "string") {
+    return "";
+  }
+
+  const cleanPath = path.replace(/^\/+/, "");
+
   if (
-    typeof path !== "string" ||
-    !/^assets\/cards\/(N|R|SR|SSR|UR)\/[\w.-]+\.(png|jpe?g|webp|gif)$/i.test(path)
+    !/^assets\/cards\/(N|R|SR|SSR|UR)\/[\w.-]+\.(png|jpe?g|webp|gif)$/i.test(
+      cleanPath
+    )
   ) {
     return "";
   }
 
-  return new URL(path, document.baseURI).href;
+  return new URL(cleanPath, document.baseURI).href;
 }
 
-// メッセージ表示
+// ==============================
+// MESSAGE
+// ==============================
+
 function showMessage(message, error = false) {
   $("message").textContent = message;
-  $("message").style.color = error ? "#ff9baa" : "#f5cb70";
+
+  $("message").style.color =
+    error ? "#ff9baa" : "#f5cb70";
 }
 
-// デッキ展開
+// ==============================
+// RESET PREPARATION
+// ==============================
+
+function resetPreparation() {
+  sessionStorage.removeItem(STORAGE_KEY);
+
+  $("readyButton").textContent = "準備完了";
+}
+
+// ==============================
+// COUNT DECK
+// ==============================
+
+function getDeckCounts(deck) {
+  const counts = new Map();
+
+  if (!deck || !Array.isArray(deck.cards)) {
+    return counts;
+  }
+
+  for (const entry of deck.cards) {
+    if (
+      !entry ||
+      typeof entry.cardId !== "string" ||
+      !Number.isSafeInteger(entry.quantity) ||
+      entry.quantity < 1
+    ) {
+      continue;
+    }
+
+    counts.set(
+      entry.cardId,
+      (counts.get(entry.cardId) || 0) +
+        entry.quantity
+    );
+  }
+
+  return counts;
+}
+
+// ==============================
+// EXPAND DECK
+// ==============================
+
 function expandDeck(deck) {
   const result = [];
+  const counts = getDeckCounts(deck);
 
-  (Array.isArray(deck.cards) ? deck.cards : []).forEach((entry) => {
-    const card = cardMap.get(entry.cardId);
-    const quantity = Number(entry.quantity || 0);
+  for (const [cardId, quantity] of counts) {
+    const card = cardMap.get(cardId);
 
-    if (
-      !card ||
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > 3
-    ) {
-      return;
-    }
+    if (!card) continue;
 
     for (let i = 0; i < quantity; i++) {
       result.push(card);
     }
-  });
+  }
 
   return result;
 }
 
-// デッキ検証
+// ==============================
+// VALIDATE DECK
+// ==============================
+
 function validateDeck(deck) {
   if (!deck) {
     return "デッキを選択してください。";
   }
 
-  const entries = Array.isArray(deck.cards) ? deck.cards : [];
-
-  if (!entries.length) {
+  if (!Array.isArray(deck.cards) ||
+      deck.cards.length === 0) {
     return "デッキにカードが登録されていません。";
   }
 
-  if (entries.some((entry) => !cardMap.has(entry.cardId))) {
-    return "存在しないカードが含まれています。デッキを編集してください。";
+  const counts = new Map();
+
+  for (const entry of deck.cards) {
+    if (
+      !entry ||
+      typeof entry.cardId !== "string" ||
+      !entry.cardId.trim() ||
+      !Number.isSafeInteger(entry.quantity) ||
+      entry.quantity < 1
+    ) {
+      return "デッキのカード情報が不正です。";
+    }
+
+    if (!cardMap.has(entry.cardId)) {
+      return "存在しないカードが含まれています。デッキを編集してください。";
+    }
+
+    const next =
+      (counts.get(entry.cardId) || 0) +
+      entry.quantity;
+
+    if (next > MAX_SAME_CARD) {
+      return `同じカードは最大${MAX_SAME_CARD}枚までです。`;
+    }
+
+    counts.set(entry.cardId, next);
   }
+
+  const total = [...counts.values()].reduce(
+    (sum, quantity) => sum + quantity,
+    0
+  );
 
   if (
-    entries.some((entry) =>
-      !Number.isInteger(Number(entry.quantity)) ||
-      Number(entry.quantity) < 1 ||
-      Number(entry.quantity) > 3
-    )
+    total !== DECK_SIZE ||
+    deck.totalCards !== DECK_SIZE
   ) {
-    return "同じカードは最大3枚までです。";
-  }
-
-  const expanded = expandDeck(deck);
-
-  if (expanded.length !== 30 || Number(deck.totalCards) !== 30) {
-    return `デッキは30枚必要です（現在${expanded.length}枚）。`;
+    return (
+      `デッキは${DECK_SIZE}枚必要です。` +
+      `現在${total}枚です。`
+    );
   }
 
   return "";
 }
 
-// デッキ表示
+// ==============================
+// RENDER DECK
+// ==============================
+
 function renderDeck() {
   const deck =
-    decks.find((item) => item.id === $("deckSelect").value) || null;
+    decks.find(
+      (item) => item.id === $("deckSelect").value
+    ) || null;
 
   selectedDeck = deck;
 
   $("deckCards").innerHTML = "";
-  $("deckName").textContent = deck?.deckName || "デッキ未選択";
+
+  $("deckName").textContent =
+    deck?.deckName || "デッキ未選択";
 
   const expanded = deck ? expandDeck(deck) : [];
 
@@ -123,19 +222,18 @@ function renderDeck() {
       "保存済みデッキを選択してください。";
 
     $("deckStatus").className = "notice";
+
     $("readyButton").disabled = true;
 
     return;
   }
 
-  const counts = new Map();
+  const counts = getDeckCounts(deck);
 
-  expanded.forEach((card) => {
-    counts.set(card.id, (counts.get(card.id) || 0) + 1);
-  });
-
-  [...counts.entries()].forEach(([id, quantity]) => {
+  for (const [id, quantity] of counts) {
     const card = cardMap.get(id);
+
+    if (!card) continue;
 
     const article = document.createElement("article");
     article.className = "mini-card";
@@ -148,30 +246,40 @@ function renderDeck() {
     }
 
     image.alt = card.name || "CARD";
-    image.onerror = () => image.remove();
+
+    image.onerror = () => {
+      image.remove();
+    };
 
     const info = document.createElement("div");
     info.className = "mini-card-info";
 
     const name = document.createElement("strong");
-    name.textContent = card.name || "UNNAMED CARD";
+    name.textContent =
+      card.name || "UNNAMED CARD";
 
     const small = document.createElement("small");
 
-    small.innerHTML =
-      `${card.rarity || "N"} ・ ${card.cardType || "CARD"} ` +
-      `<span class="qty">×${quantity}</span>`;
+    const rarity = document.createElement("span");
+    rarity.textContent =
+      `${card.rarity || "N"} ・ ${card.cardType || "CARD"} `;
 
+    const quantityLabel = document.createElement("span");
+    quantityLabel.className = "qty";
+    quantityLabel.textContent = `×${quantity}`;
+
+    small.append(rarity, quantityLabel);
     info.append(name, small);
     article.append(image, info);
 
     $("deckCards").append(article);
-  });
+  }
 
   const error = validateDeck(deck);
 
   $("deckStatus").textContent =
-    error || "このデッキは対戦条件を満たしています。";
+    error ||
+    "この10枚デッキは対戦条件を満たしています。";
 
   $("deckStatus").className =
     error ? "notice bad" : "notice good";
@@ -179,32 +287,43 @@ function renderDeck() {
   $("readyButton").disabled = Boolean(error);
 }
 
-// Firebaseからデータ読み込み
+// ==============================
+// LOAD FIREBASE DATA
+// ==============================
+
 async function loadData() {
   $("deckStatus").textContent =
     "カード・デッキを読み込んでいます...";
 
-  const [cardSnapshot, deckSnapshot] = await Promise.all([
-    getDocs(collection(db, "cards")),
+  $("readyButton").disabled = true;
 
-    getDocs(
-      collection(db, "users", currentUser.uid, "decks")
-    )
-  ]);
+  const [cardSnapshot, deckSnapshot] =
+    await Promise.all([
+      getDocs(collection(db, "cards")),
+
+      getDocs(
+        collection(
+          db,
+          "users",
+          currentUser.uid,
+          "decks"
+        )
+      )
+    ]);
 
   cardMap = new Map(
     cardSnapshot.docs.map((item) => [
       item.id,
       {
-        id: item.id,
-        ...item.data()
+        ...item.data(),
+        id: item.id
       }
     ])
   );
 
   decks = deckSnapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data()
+    ...item.data(),
+    id: item.id
   }));
 
   decks.sort((a, b) =>
@@ -223,7 +342,16 @@ async function loadData() {
     const option = document.createElement("option");
 
     option.value = deck.id;
-    option.textContent = deck.deckName || "名称未設定";
+
+    const counts = getDeckCounts(deck);
+
+    const total = [...counts.values()].reduce(
+      (sum, quantity) => sum + quantity,
+      0
+    );
+
+    option.textContent =
+      `${deck.deckName || "名称未設定"} (${total}/${DECK_SIZE})`;
 
     select.append(option);
   });
@@ -247,58 +375,90 @@ async function loadData() {
   renderDeck();
 }
 
-// モード選択
-document.querySelectorAll(".mode-card").forEach((button) => {
-  button.addEventListener("click", () => {
-    selectedMode = button.dataset.mode;
+// ==============================
+// MODE SELECTION
+// ==============================
 
-    document.querySelectorAll(".mode-card").forEach((item) => {
-      item.classList.toggle("selected", item === button);
+document.querySelectorAll(".mode-card").forEach(
+  (button) => {
+    button.addEventListener("click", () => {
+      if (!modeDescriptions[button.dataset.mode]) {
+        return;
+      }
+
+      selectedMode = button.dataset.mode;
+
+      document.querySelectorAll(".mode-card").forEach(
+        (item) => {
+          item.classList.toggle(
+            "selected",
+            item === button
+          );
+        }
+      );
+
+      $("modeDescription").textContent =
+        modeDescriptions[selectedMode];
+
+      resetPreparation();
     });
-
-    $("modeDescription").textContent =
-      modeDescriptions[selectedMode];
-  });
-});
-
-// デッキ変更
-$("deckSelect").addEventListener("change", renderDeck);
-
-// 準備完了
-$("readyButton").addEventListener("click", () => {
-  const error = validateDeck(selectedDeck);
-
-  if (error) {
-    showMessage(error, true);
-    return;
   }
+);
 
-  const preparation = {
-    mode: selectedMode,
-    deckId: selectedDeck.id,
-    deckName: selectedDeck.deckName,
-    preparedAt: new Date().toISOString()
-  };
+// ==============================
+// DECK SELECTION
+// ==============================
 
-  sessionStorage.setItem(
-    "rashMastersBattlePreparation",
-    JSON.stringify(preparation)
-  );
-
-  const modeLabel = {
-    casual: "カジュアル",
-    ranked: "ランク",
-    friend: "フレンド"
-  }[selectedMode];
-
-  showMessage(
-    `${modeLabel}対戦用デッキ「${selectedDeck.deckName}」を確定しました！次工程で対戦ルームに接続します。`
-  );
-
-  $("readyButton").textContent = "準備完了 ✓";
+$("deckSelect").addEventListener("change", () => {
+  resetPreparation();
+  renderDeck();
 });
 
-// ログイン確認
+// ==============================
+// READY BUTTON
+// ==============================
+
+$("readyButton").addEventListener(
+  "click",
+  async () => {
+    const error = validateDeck(selectedDeck);
+
+    if (error) {
+      showMessage(error, true);
+      return;
+    }
+
+    const preparation = {
+      mode: selectedMode,
+      deckId: selectedDeck.id,
+      deckName: selectedDeck.deckName,
+      deckSize: DECK_SIZE,
+      preparedAt: new Date().toISOString()
+    };
+
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(preparation)
+    );
+
+    const modeLabel = {
+      casual: "カジュアル",
+      ranked: "ランク",
+      friend: "フレンド"
+    }[selectedMode];
+
+    showMessage(
+      `${modeLabel}対戦用デッキ「${selectedDeck.deckName}」を確定しました！次工程で対戦ルームに接続します。`
+    );
+
+    $("readyButton").textContent = "準備完了 ✓";
+  }
+);
+
+// ==============================
+// AUTH
+// ==============================
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.replace("login.html");
@@ -307,9 +467,10 @@ onAuthStateChanged(auth, async (user) => {
 
   currentUser = user;
 
+  resetPreparation();
+
   try {
     await loadData();
-
   } catch (error) {
     console.error(error);
 
@@ -317,6 +478,8 @@ onAuthStateChanged(auth, async (user) => {
       "読み込みに失敗しました。Firestore Rulesとネットワークを確認してください。";
 
     $("deckStatus").className = "notice bad";
+
+    $("readyButton").disabled = true;
 
     showMessage(
       "デッキ情報を取得できませんでした。",
