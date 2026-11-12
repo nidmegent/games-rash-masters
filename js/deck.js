@@ -15,6 +15,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 // ==============================
+// DECK RULES
+// ==============================
+
+const DECK_SIZE = 10;
+const MAX_SAME_CARD = 3;
+
+// ==============================
 // STATE
 // ==============================
 
@@ -77,8 +84,8 @@ async function loadCollection() {
   });
 
   masterCards = masterSnapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data()
+    ...item.data(),
+    id: item.id
   }));
 
   ownedCards = masterCards
@@ -112,8 +119,8 @@ async function loadSavedDecks() {
   );
 
   savedDecks = snapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data()
+    ...item.data(),
+    id: item.id
   }));
 
   savedDecks.sort((a, b) =>
@@ -138,7 +145,17 @@ function renderSavedDeckSelect() {
   savedDecks.forEach((deck) => {
     const option = document.createElement("option");
     option.value = deck.id;
-    option.textContent = deck.deckName || "UNNAMED DECK";
+
+    const total = Array.isArray(deck.cards)
+      ? deck.cards.reduce(
+          (sum, entry) => sum + Number(entry.quantity || 0),
+          0
+        )
+      : 0;
+
+    option.textContent =
+      `${deck.deckName || "UNNAMED DECK"} (${total}/${DECK_SIZE})`;
+
     select.appendChild(option);
   });
 
@@ -153,7 +170,13 @@ function renderSavedDeckSelect() {
 function getImageUrl(path) {
   if (!path) return "";
 
-  const cleanPath = String(path).replace(/^\/+/, "");
+  const value = String(path).trim();
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const cleanPath = value.replace(/^\/+/, "");
 
   return new URL("../" + cleanPath, import.meta.url).href;
 }
@@ -179,6 +202,14 @@ function getDeckQuantity(cardId) {
 function getOwnedQuantity(cardId) {
   const card = ownedCards.find((item) => item.id === cardId);
   return card ? card.ownedQuantity : 0;
+}
+
+function canAddCard(cardId) {
+  return (
+    getDeckCount() < DECK_SIZE &&
+    getDeckQuantity(cardId) < MAX_SAME_CARD &&
+    getDeckQuantity(cardId) < getOwnedQuantity(cardId)
+  );
 }
 
 // ==============================
@@ -219,7 +250,6 @@ function renderCollection() {
 
   filtered.forEach((card) => {
     const quantity = getDeckQuantity(card.id);
-    const remaining = card.ownedQuantity - quantity;
 
     const article = document.createElement("article");
     article.className = "collection-card";
@@ -242,7 +272,8 @@ function renderCollection() {
     rarity.textContent = card.rarity || "N";
 
     const owned = document.createElement("small");
-    owned.textContent = `所持 ${card.ownedQuantity}枚 / 編成 ${quantity}枚`;
+    owned.textContent =
+      `所持 ${card.ownedQuantity}枚 / 編成 ${quantity}枚`;
 
     const actions = document.createElement("div");
     actions.className = "card-actions";
@@ -251,7 +282,9 @@ function renderCollection() {
     minus.type = "button";
     minus.textContent = "−";
     minus.disabled = quantity <= 0;
-    minus.addEventListener("click", () => changeCardQuantity(card.id, -1));
+    minus.addEventListener("click", () =>
+      changeCardQuantity(card.id, -1)
+    );
 
     const count = document.createElement("span");
     count.textContent = quantity;
@@ -259,8 +292,10 @@ function renderCollection() {
     const plus = document.createElement("button");
     plus.type = "button";
     plus.textContent = "＋";
-    plus.disabled = remaining <= 0 || getDeckCount() >= 30;
-    plus.addEventListener("click", () => changeCardQuantity(card.id, 1));
+    plus.disabled = !canAddCard(card.id);
+    plus.addEventListener("click", () =>
+      changeCardQuantity(card.id, 1)
+    );
 
     actions.append(minus, count, plus);
     info.append(name, rarity, owned, actions);
@@ -285,8 +320,19 @@ function changeCardQuantity(cardId, change) {
     return;
   }
 
-  if (change > 0 && getDeckCount() >= 30) {
-    showMessage("デッキは30枚までです。", "error");
+  if (next > MAX_SAME_CARD) {
+    showMessage(
+      `同じカードは最大${MAX_SAME_CARD}枚までです。`,
+      "error"
+    );
+    return;
+  }
+
+  if (change > 0 && getDeckCount() >= DECK_SIZE) {
+    showMessage(
+      `デッキは${DECK_SIZE}枚までです。`,
+      "error"
+    );
     return;
   }
 
@@ -358,9 +404,7 @@ function renderDeckList() {
     const plus = document.createElement("button");
     plus.type = "button";
     plus.textContent = "＋";
-    plus.disabled =
-      quantity >= getOwnedQuantity(cardId) || getDeckCount() >= 30;
-
+    plus.disabled = !canAddCard(cardId);
     plus.addEventListener("click", () =>
       changeCardQuantity(cardId, 1)
     );
@@ -371,7 +415,8 @@ function renderDeckList() {
     list.appendChild(row);
   });
 
-  $("deckTotal").textContent = `${getDeckCount()} / 30`;
+  $("deckTotal").textContent =
+    `${getDeckCount()} / ${DECK_SIZE}`;
 }
 
 // ==============================
@@ -383,20 +428,30 @@ function renderDeckStatus() {
   const name = $("deckName").value.trim();
 
   $("deckCount").textContent = total;
-  $("deckProgress").style.width = `${(total / 30) * 100}%`;
+
+  $("deckProgress").style.width =
+    `${Math.min((total / DECK_SIZE) * 100, 100)}%`;
 
   $("currentDeckTitle").textContent = name || "NEW DECK";
 
-  if (total < 30) {
+  if (total < DECK_SIZE) {
     $("deckStatusText").textContent =
-      `あと${30 - total}枚でデッキ完成！`;
+      `あと${DECK_SIZE - total}枚でデッキ完成！`;
+  } else if (total === DECK_SIZE) {
+    $("deckStatusText").textContent =
+      `${DECK_SIZE}枚完成！デッキを保存できます。`;
   } else {
     $("deckStatusText").textContent =
-      "30枚完成！デッキを保存できます。";
+      `${total - DECK_SIZE}枚減らしてください。`;
   }
 
   $("saveDeckButton").disabled =
-    isSaving || total !== 30 || !name;
+    isSaving || total !== DECK_SIZE || !name ||
+    [...deckContents.entries()].some(
+      ([cardId, quantity]) =>
+        quantity > MAX_SAME_CARD ||
+        quantity > getOwnedQuantity(cardId)
+    );
 }
 
 // ==============================
@@ -432,13 +487,13 @@ $("savedDeckSelect").addEventListener("change", () => {
   }
 
   const deck = savedDecks.find((item) => item.id === deckId);
-
   if (!deck) return;
 
   selectedDeckId = deckId;
   $("deckName").value = deck.deckName || "";
 
   const nextContents = new Map();
+  let adjusted = false;
 
   (Array.isArray(deck.cards) ? deck.cards : []).forEach((entry) => {
     const cardId = entry.cardId;
@@ -450,7 +505,16 @@ $("savedDeckSelect").addEventListener("change", () => {
       Number.isSafeInteger(quantity) &&
       quantity > 0
     ) {
-      nextContents.set(cardId, Math.min(quantity, owned));
+      const usable = Math.min(quantity, owned);
+
+      nextContents.set(
+        cardId,
+        (nextContents.get(cardId) || 0) + usable
+      );
+
+      if (usable !== quantity) adjusted = true;
+    } else {
+      adjusted = true;
     }
   });
 
@@ -459,11 +523,24 @@ $("savedDeckSelect").addEventListener("change", () => {
   renderSavedDeckSelect();
   renderAll();
 
-  if (getDeckCount() !== 30) {
+  if (getDeckCount() > DECK_SIZE) {
     showMessage(
-      "所持枚数が変わったため、デッキ内容を調整しました。30枚に戻して保存してください。",
+      `旧ルールのデッキです。${DECK_SIZE}枚に減らして保存してください。`,
       "error"
     );
+  } else if (
+    getDeckCount() !== DECK_SIZE ||
+    adjusted ||
+    [...deckContents.values()].some(
+      (quantity) => quantity > MAX_SAME_CARD
+    )
+  ) {
+    showMessage(
+      `デッキ内容を確認し、${DECK_SIZE}枚・同じカード最大${MAX_SAME_CARD}枚に調整してください。`,
+      "error"
+    );
+  } else {
+    showMessage("デッキを読み込みました。", "success");
   }
 });
 
@@ -474,9 +551,13 @@ $("savedDeckSelect").addEventListener("change", () => {
 $("deleteDeckButton").addEventListener("click", async () => {
   if (!selectedDeckId) return;
 
-  const deck = savedDecks.find((item) => item.id === selectedDeckId);
+  const deck = savedDecks.find(
+    (item) => item.id === selectedDeckId
+  );
 
-  if (!confirm(`「${deck?.deckName || "このデッキ"}」を削除しますか？`)) {
+  if (!confirm(
+    `「${deck?.deckName || "このデッキ"}」を削除しますか？`
+  )) {
     return;
   }
 
@@ -511,7 +592,7 @@ $("deleteDeckButton").addEventListener("click", async () => {
 $("saveDeckButton").addEventListener("click", saveDeck);
 
 async function saveDeck() {
-  if (isSaving) return;
+  if (isSaving || !currentUser) return;
 
   const deckName = $("deckName").value.trim();
   const total = getDeckCount();
@@ -521,15 +602,37 @@ async function saveDeck() {
     return;
   }
 
-  if (total !== 30) {
-    showMessage("デッキはちょうど30枚にしてください。", "error");
+  if (deckName.length > 30) {
+    showMessage("デッキ名は30文字以内にしてください。", "error");
     return;
   }
 
-  // 保存直前に所持枚数を再確認
+  if (total !== DECK_SIZE) {
+    showMessage(
+      `デッキはちょうど${DECK_SIZE}枚にしてください。`,
+      "error"
+    );
+    return;
+  }
+
   for (const [cardId, quantity] of deckContents.entries()) {
+    if (
+      !Number.isSafeInteger(quantity) ||
+      quantity < 1 ||
+      quantity > MAX_SAME_CARD
+    ) {
+      showMessage(
+        `同じカードは最大${MAX_SAME_CARD}枚までです。`,
+        "error"
+      );
+      return;
+    }
+
     if (quantity > getOwnedQuantity(cardId)) {
-      showMessage("所持枚数を超えているカードがあります。", "error");
+      showMessage(
+        "所持枚数を超えているカードがあります。",
+        "error"
+      );
       return;
     }
   }
@@ -580,11 +683,14 @@ async function saveDeck() {
 
     $("savedDeckSelect").value = deckId;
 
-    showMessage("デッキを保存しました！", "success");
+    showMessage("10枚デッキを保存しました！", "success");
 
   } catch (error) {
     console.error(error);
-    showMessage("デッキの保存に失敗しました。", "error");
+    showMessage(
+      "デッキの保存に失敗しました。Firestore Rulesを確認してください。",
+      "error"
+    );
 
   } finally {
     isSaving = false;
