@@ -155,7 +155,7 @@ function getImageUrl(path) {
 
   const cleanPath = String(path).replace(/^\/+/, "");
 
-  return new URL(cleanPath, import.meta.url).href;
+  return new URL("../" + cleanPath, import.meta.url).href;
 }
 
 // ==============================
