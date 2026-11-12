@@ -450,6 +450,10 @@ $("readyButton").addEventListener(
       `${modeLabel}対戦用デッキ「${selectedDeck.deckName}」を確定しました！次工程で対戦ルームに接続します。`
     );
 
+    if (selectedMode === "casual") {
+    location.href = "arena.html";
+    }
+    
     $("readyButton").textContent = "準備完了 ✓";
   }
 );
