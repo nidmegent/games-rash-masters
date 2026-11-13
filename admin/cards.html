@@ -80,6 +80,74 @@
 
             <input type="hidden" id="editingId">
 
+            
+<!-- =====================================
+     RASH MASTERS SKILL SETTINGS
+===================================== -->
+
+<div class="skill-settings">
+  <div class="panel-heading">
+    <div>
+      <span class="section-tag">CARD ABILITY</span>
+      <h2>✦ スキル設定</h2>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="skillTrigger">
+      スキル発動タイミング
+    </label>
+
+    <select id="skillTrigger">
+      <option value="NONE">スキルなし</option>
+      <option value="ON_SUMMON">召喚時</option>
+      <option value="ON_ATTACK">攻撃時</option>
+      <option value="PASSIVE">常時</option>
+      <option value="ON_DESTROY">破壊時</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="skillEffect">
+      スキル効果
+    </label>
+
+    <select id="skillEffect" disabled>
+      <option value="NONE">効果なし</option>
+      <option value="DAMAGE">相手モンスターにダメージ</option>
+      <option value="HEAL">自分のプレイヤーHP回復</option>
+      <option value="ATK_UP">攻撃力アップ</option>
+      <option value="SHIELD">受けるダメージ軽減</option>
+      <option value="DRAW">カードをドロー</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="skillValue">
+      スキル効果量
+    </label>
+
+    <input
+      type="number"
+      id="skillValue"
+      min="0"
+      max="99999"
+      step="1"
+      value="0"
+      disabled
+    >
+
+    <small class="input-help">
+      ドローの場合は枚数、それ以外は効果量を入力してください。
+    </small>
+  </div>
+
+  <div id="skillPreview" class="skill-preview">
+    このカードにはスキルが設定されていません。
+  </div>
+</div>
+
+            
             <div class="form-group">
               <label for="cardName">カード名 <span>*</span></label>
               <input
