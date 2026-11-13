@@ -187,16 +187,27 @@ function summonEffect(element) {
   setTimeout(() => ring.remove(), 700);
 }
 
-function screenShake() {
-  const element = $("battleColumn");
-  element.classList.remove("screen-shake");
-  void element.offsetWidth;
-  element.classList.add("screen-shake");
 
-  setTimeout(() => {
+function screenShake() {
+
+  const fields = document.querySelectorAll(
+    ".enemy-field, .player-field"
+  );
+
+  fields.forEach(element => {
     element.classList.remove("screen-shake");
-  }, 400);
+
+    // アニメーションを再実行
+    void element.offsetWidth;
+
+    element.classList.add("screen-shake");
+
+    setTimeout(() => {
+      element.classList.remove("screen-shake");
+    }, 400);
+  });
 }
+
 
 function findSlot(side, instanceId) {
   return [...document.querySelectorAll(
