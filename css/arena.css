@@ -1372,3 +1372,135 @@ body::before {
     z-index: 50;
   }
 }
+
+
+/* ========================================
+   RASH MASTERS SKILL ANIMATIONS
+======================================== */
+
+.slot {
+  position: relative;
+}
+
+.skill-vfx {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: skillFlash 1.1s ease-out forwards;
+}
+
+.skill-vfx-text {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, 0);
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 900;
+  text-shadow: 0 2px 8px #000;
+  animation: skillTextRise 1.1s ease-out forwards;
+}
+
+/* 自己回復：緑 */
+.skill-heal {
+  border: 2px solid #4cff9b;
+  box-shadow:
+    0 0 20px #4cff9b,
+    inset 0 0 24px #4cff9b66;
+}
+
+.skill-heal .skill-vfx-text {
+  color: #66ffac;
+}
+
+/* 攻撃力アップ：赤 */
+.skill-atk {
+  border: 2px solid #ff5252;
+  box-shadow:
+    0 0 24px #ff5252,
+    inset 0 0 28px #ff525266;
+}
+
+.skill-atk .skill-vfx-text {
+  color: #ff7777;
+}
+
+/* ダメージ軽減：青 */
+.skill-shield {
+  border: 2px solid #4fc3ff;
+  box-shadow:
+    0 0 24px #4fc3ff,
+    inset 0 0 30px #4fc3ff66;
+}
+
+.skill-shield .skill-vfx-text {
+  color: #7edbff;
+}
+
+/* スキルダメージ：紫 */
+.skill-damage {
+  border: 2px solid #b76cff;
+  box-shadow:
+    0 0 28px #b76cff,
+    inset 0 0 30px #b76cff77;
+}
+
+.skill-damage .skill-vfx-text {
+  color: #d6a0ff;
+}
+
+/* ドロー：金 */
+.skill-draw {
+  border: 2px solid #ffd65a;
+  box-shadow:
+    0 0 25px #ffd65a,
+    inset 0 0 28px #ffd65a66;
+}
+
+.skill-draw .skill-vfx-text {
+  color: #ffe58a;
+}
+
+@keyframes skillFlash {
+  0% {
+    opacity: 0;
+    transform: scale(.85);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  55% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes skillTextRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(.7);
+  }
+
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -5px) scale(1.2);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -35px) scale(1);
+  }
+}
