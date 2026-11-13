@@ -1179,3 +1179,107 @@ body::before {
   }
 
 }
+
+
+/* ========================================
+   RASH MASTERS VER.2.2
+   SURRENDER BUTTON / CONFIRM MODAL
+======================================== */
+
+.surrender-button {
+  background: linear-gradient(
+    110deg, #9d354f, #e75a69
+  ) !important;
+  color: #fff !important;
+}
+
+.surrender-button:hover:not(:disabled) {
+  filter: brightness(1.18);
+}
+
+.surrender-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(2, 3, 12, .88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.surrender-overlay.hidden {
+  display: none;
+}
+
+.surrender-box {
+  width: min(420px, 100%);
+  padding: 32px 24px;
+  border: 1px solid #b54a67;
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg, #242039, #101323
+  );
+  box-shadow: 0 0 60px #a92e4b44;
+  text-align: center;
+}
+
+.surrender-box h2 {
+  font-size: 22px;
+  margin: 16px 0;
+  color: #fff;
+}
+
+.surrender-box p {
+  color: #b9bed3;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.surrender-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.surrender-actions button {
+  flex: 1;
+  min-height: 45px;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#cancelSurrender {
+  background: #343b55;
+  color: white;
+}
+
+#confirmSurrender {
+  background: linear-gradient(
+    110deg, #b72e50, #f06b72
+  );
+  color: white;
+}
+
+@media (max-width: 650px) {
+  .action-panel .actions {
+    gap: 5px;
+  }
+
+  .action-panel .actions button {
+    font-size: 10px;
+    padding: 10px 4px;
+  }
+
+  .surrender-box {
+    padding: 26px 16px;
+  }
+
+  .surrender-box h2 {
+    font-size: 19px;
+  }
+}
