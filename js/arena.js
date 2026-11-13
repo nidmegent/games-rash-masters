@@ -192,48 +192,44 @@ function summonEffect(element) {
    RASH MASTERS SKILL EFFECTS VER.1
 ======================================== */
 
+
 function showSkillEffect(side, unitId, type, amount = 0) {
   const target = findSlot(side, unitId);
-  if (!target) return;
+  const layer = $("effectLayer");
+
+  if (!target || !layer) return;
+
+  const point = elementCenter(target);
+  if (!point) return;
 
   const effects = {
-    HEAL: {
-      className: "skill-heal",
-      text: `+${amount} HP`
-    },
-    ATK_UP: {
-      className: "skill-atk",
-      text: `+${amount} ATK`
-    },
-    SHIELD: {
-      className: "skill-shield",
-      text: `🛡 -${amount}`
-    },
-    DAMAGE: {
-      className: "skill-damage",
-      text: `-${amount}`
-    },
-    DRAW: {
-      className: "skill-draw",
-      text: `DRAW +${amount}`
-    }
+    HEAL: ["skill-heal", `+${amount} HP`],
+    ATK_UP: ["skill-atk", `+${amount} ATK`],
+    SHIELD: ["skill-shield", `🛡 -${amount}`],
+    DAMAGE: ["skill-damage", `-${amount}`],
+    DRAW: ["skill-draw", `DRAW +${amount}`]
   };
 
   const effect = effects[type];
   if (!effect) return;
 
-  // 同じカードの古い演出を削除
-  target.querySelectorAll(".skill-vfx").forEach(el => el.remove());
-
   const overlay = document.createElement("div");
-  overlay.className = `skill-vfx ${effect.className}`;
+  overlay.className = `skill-vfx ${effect[0]}`;
+
+  overlay.style.position = "fixed";
+  overlay.style.left = `${point.x}px`;
+  overlay.style.top = `${point.y}px`;
+  overlay.style.width = `${target.offsetWidth}px`;
+  overlay.style.height = `${target.offsetHeight}px`;
+  overlay.style.transform = "translate(-50%, -50%)";
+  overlay.style.pointerEvents = "none";
 
   const text = document.createElement("span");
   text.className = "skill-vfx-text";
-  text.textContent = effect.text;
+  text.textContent = effect[1];
 
   overlay.append(text);
-  target.append(overlay);
+  layer.append(overlay);
 
   setTimeout(() => overlay.remove(), 1100);
 }
@@ -389,40 +385,37 @@ function activateSkill(side, unit, trigger) {
     `${side === "player" ? "あなた" : "CPU"}の` +
     `「${cardName(unit)}」`;
 
-  // 常時能力は別関数で計算
   if (trigger === "PASSIVE") return;
 
+  // スキルダメージ
   if (effect === "DAMAGE") {
     const target = game[opponent].field[0];
 
     if (!target) {
-      addLog(
-        `✦ ${label}のスキル：対象モンスターなし`
-      );
+      addLog(`✦ ${label}のスキル：対象モンスターなし`);
       return;
     }
 
-    dealUnitDamage(
+    const damage = dealUnitDamage(
       opponent,
       target,
       value,
       `${label}のスキル`
     );
 
-  
-  } else if (effect === "HEAL") {
-    // =====================================
-    // 自分自身のカードHP回復
-    // =====================================
+    showSkillEffect(
+      opponent,
+      target.instanceId,
+      "DAMAGE",
+      damage
+    );
 
-    // HPが0以下なら回復できない
-    if (unit.currentHp <= 0) {
-      return;
-    }
+  // 自分自身のカードHP回復
+  } else if (effect === "HEAL") {
+    if (unit.currentHp <= 0) return;
 
     const before = unit.currentHp;
 
-    // 最大HPを超えないように回復
     unit.currentHp = Math.min(
       unit.maxHp,
       before + value
@@ -432,11 +425,20 @@ function activateSkill(side, unit, trigger) {
 
     addLog(
       `✦ ${label}の自己回復！ ` +
-      `HP ${before} → ${unit.currentHp}/${unit.maxHp}` +
-      `（回復量：${healed}）`,
+      `HP ${before} → ${unit.currentHp}/${unit.maxHp}`,
       "summon"
     );
 
+    if (healed > 0) {
+      showSkillEffect(
+        side,
+        unit.instanceId,
+        "HEAL",
+        healed
+      );
+    }
+
+  // 攻撃力アップ
   } else if (effect === "ATK_UP") {
     unit.skillAttackBonus =
       (unit.skillAttackBonus || 0) + value;
@@ -446,19 +448,38 @@ function activateSkill(side, unit, trigger) {
       "summon"
     );
 
-  } 
-  else if (effect === "DRAW") {
+    showSkillEffect(
+      side,
+      unit.instanceId,
+      "ATK_UP",
+      value
+    );
+
+  // ドロー
+  } else if (effect === "DRAW") {
     addLog(
       `✦ ${label}のドロースキル！`,
       "summon"
     );
 
+    const before = game[side].hand.length;
+
     drawCards(
       side,
       Math.min(value, RULES.maxHand)
     );
+
+    const drawn = game[side].hand.length - before;
+
+    showSkillEffect(
+      side,
+      unit.instanceId,
+      "DRAW",
+      drawn
+    );
   }
 }
+
 
 
 // ========================================
@@ -589,6 +610,22 @@ function summon(side, index) {
   // 召喚時スキル発動
   activateSkill(side, unit, "ON_SUMMON");
 
+  
+  // 常時スキルの召喚演出
+  const passiveSkill = skillOf(unit);
+
+  if (
+    passiveSkill?.trigger === "PASSIVE" &&
+    passiveSkill.effect === "ATK_UP"
+  ) {
+    showSkillEffect(
+      side,
+      unit.instanceId,
+      "ATK_UP",
+      passiveSkill.value
+    );
+  }
+
   // スキルによる破壊を処理
   removeDestroyedUnits();
 
@@ -623,6 +660,21 @@ function applyHeroDamage(side, amount) {
   if (game.finished) return;
 
   const damage = Math.max(0, amount);
+
+  
+  // シールド発動エフェクト
+  const reduced = Math.min(shield, amount);
+
+  if (reduced > 0) {
+    showSkillEffect(
+      side,
+      target.instanceId,
+      "SHIELD",
+      reduced
+    );
+  }
+
+  
   game[side].hp = Math.max(0, game[side].hp - damage);
 
   addLog(
