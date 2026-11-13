@@ -359,16 +359,31 @@ function activateSkill(side, unit, trigger) {
       `${label}のスキル`
     );
 
+  
   } else if (effect === "HEAL") {
-    const before = game[side].hp;
+    // =====================================
+    // 自分自身のカードHP回復
+    // =====================================
 
-    game[side].hp = Math.min(
-      RULES.maxHp,
+    // HPが0以下なら回復できない
+    if (unit.currentHp <= 0) {
+      return;
+    }
+
+    const before = unit.currentHp;
+
+    // 最大HPを超えないように回復
+    unit.currentHp = Math.min(
+      unit.maxHp,
       before + value
     );
 
+    const healed = unit.currentHp - before;
+
     addLog(
-      `✦ ${label}の回復スキル！ HP +${game[side].hp - before}`,
+      `✦ ${label}の自己回復！ ` +
+      `HP ${before} → ${unit.currentHp}/${unit.maxHp}` +
+      `（回復量：${healed}）`,
       "summon"
     );
 
@@ -381,7 +396,8 @@ function activateSkill(side, unit, trigger) {
       "summon"
     );
 
-  } else if (effect === "DRAW") {
+  } 
+  else if (effect === "DRAW") {
     addLog(
       `✦ ${label}のドロースキル！`,
       "summon"
