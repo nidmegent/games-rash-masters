@@ -311,6 +311,7 @@ function effectiveAttack(unit) {
   );
 }
 
+
 function dealUnitDamage(side, target, amount, source) {
   const skill = skillOf(target);
 
@@ -320,6 +321,7 @@ function dealUnitDamage(side, target, amount, source) {
       ? skill.value
       : 0;
 
+  const reduced = Math.min(shield, amount);
   const damage = Math.max(0, amount - shield);
 
   target.currentHp = Math.max(
@@ -327,11 +329,18 @@ function dealUnitDamage(side, target, amount, source) {
     target.currentHp - damage
   );
 
+  if (reduced > 0) {
+    showSkillEffect(
+      side,
+      target.instanceId,
+      "SHIELD",
+      reduced
+    );
+  }
+
   addLog(
     `✦ ${source} →「${cardName(target)}」に${damage}ダメージ` +
-    (shield
-      ? `（軽減${Math.min(shield, amount)}）`
-      : ""),
+    (reduced > 0 ? `（軽減${reduced}）` : ""),
     "damage"
   );
 
@@ -657,35 +666,28 @@ function availableAttackers(side) {
 }
 
 function applyHeroDamage(side, amount) {
-  if (game.finished) return;
+  if (!game || game.finished) return;
 
   const damage = Math.max(0, amount);
 
-  
-  // シールド発動エフェクト
-  const reduced = Math.min(shield, amount);
-
-  if (reduced > 0) {
-    showSkillEffect(
-      side,
-      target.instanceId,
-      "SHIELD",
-      reduced
-    );
-  }
-
-  
-  game[side].hp = Math.max(0, game[side].hp - damage);
+  // プレイヤー本体のHPを減らす
+  game[side].hp = Math.max(
+    0,
+    game[side].hp - damage
+  );
 
   addLog(
-    `${side === "player" ? "あなた" : "CPU"}に${damage}ダメージ！残りHP：${game[side].hp}`,
+    `${side === "player" ? "あなた" : "CPU"}に` +
+    `${damage}ダメージ！残りHP：${game[side].hp}`,
     "damage"
   );
 
+  // HPが0になったら勝敗を決定
   if (game[side].hp === 0) {
     finish(side === "enemy" ? "VICTORY" : "DEFEAT");
   }
 }
+
 
 async function attackUnit(attackerSide, attackerId, defenderId) {
   if (!game || game.finished) return false;
