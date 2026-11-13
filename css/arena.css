@@ -1153,18 +1153,29 @@ body::before {
 }
 
 
-/* PC版：テリトリーの縦幅だけ縮小 */
+
+/* ========================================
+   PC版 テリトリー縦幅拡大
+======================================== */
+
 @media (min-width: 1001px) {
+
+  /* テリトリーの外枠を縦に拡大 */
   .field {
-    padding-top: 4px;
-    padding-bottom: 4px;
+    min-height: 230px;
+    padding: 12px 16px;
   }
 
-  .field-heading {
-    margin-bottom: 3px;
-  }
-
+  /* モンスターを置く枠も縦に拡大 */
   .slot {
-    height: 105px;
+    height: 185px;
   }
+
+  /* 3枚の横並びはそのまま */
+  .slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 500px;
+    gap: 10px;
+  }
+
 }
