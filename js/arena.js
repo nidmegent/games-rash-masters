@@ -779,6 +779,61 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
 }
 
 
+/* ========================================
+   RASH MASTERS - FINAL ATTACK
+======================================== */
+
+async function playFinalAttack(attacker) {
+  const overlay = document.createElement("div");
+  overlay.className = "final-attack-overlay";
+
+  const flash = document.createElement("div");
+  flash.className = "final-attack-flash";
+
+  const title = document.createElement("div");
+  title.className = "final-attack-title";
+  title.textContent = "FINAL ATTACK";
+
+  const card = document.createElement("div");
+  card.className = "final-attack-card";
+
+  const image = createCardImage(attacker);
+  image.className = "final-attack-image";
+
+  const name = document.createElement("div");
+  name.className = "final-attack-name";
+  name.textContent = cardName(attacker);
+
+  const damage = document.createElement("div");
+  damage.className = "final-attack-damage";
+  damage.textContent =
+    `${effectiveAttack(attacker).toLocaleString("ja-JP")} DAMAGE`;
+
+  card.append(image, name);
+  overlay.append(flash, title, card, damage);
+  document.body.append(overlay);
+
+  try {
+    // カード登場
+    await sleep(900);
+
+    // 攻撃開始
+    card.classList.add("final-attack-charge");
+    await sleep(550);
+
+    // 画面全体に衝撃
+    overlay.classList.add("final-attack-impact");
+    await sleep(550);
+
+    // 演出終了
+    overlay.classList.add("final-attack-out");
+    await sleep(350);
+  } finally {
+    overlay.remove();
+  }
+}
+
+
 async function attackHero(attackerSide, attackerId) {
   if (!game || game.finished) return false;
 
@@ -793,26 +848,22 @@ async function attackHero(attackerSide, attackerId) {
     return false;
   }
 
-  if (game[defenderSide].field.length > 0) return false;
+  if (game[defenderSide].field.length > 0) {
+    return false;
+  }
 
-  // 直接攻撃でも全体の攻撃権を消費
+  // 攻撃権を消費
   game[attackerSide].attacksUsed++;
   attacker.attacked = true;
 
   addLog(
-    `「${cardName(attacker)}」が${defenderSide === "enemy" ? "CPU" : "あなた"}に直接攻撃！`,
+    `「${cardName(attacker)}」が` +
+    `${defenderSide === "enemy" ? "CPU" : "あなた"}に直接攻撃！`,
     "damage"
   );
 
-  const hero = document.querySelector(
-    defenderSide === "enemy" ? ".fighter.enemy" : ".fighter.player"
-  );
-
-  
-  // 攻撃時スキル発動
+  // 攻撃時スキル
   activateSkill(attackerSide, attacker, "ON_ATTACK");
-
-  // スキルによる破壊を処理
   removeDestroyedUnits();
 
   if (game.finished) {
@@ -820,7 +871,7 @@ async function attackHero(attackerSide, attackerId) {
     return true;
   }
 
-  // 攻撃力を計算
+  // 最終攻撃力
   const damage = effectiveAttack(attacker);
 
   // 一時的な攻撃力強化を解除
@@ -828,18 +879,38 @@ async function attackHero(attackerSide, attackerId) {
     attacker.skillAttackBonus = 0;
   }
 
-  impactEffect(hero);
-  floatingDamage(hero, damage);
+  // HPが0になる攻撃かどうか
+  const isFinalAttack =
+    damage > 0 &&
+    game[defenderSide].hp <= damage;
+
+  // フィニッシュ攻撃演出
+  if (isFinalAttack) {
+    await playFinalAttack(attacker);
+  }
+
+  const hero = document.querySelector(
+    defenderSide === "enemy"
+      ? ".fighter.enemy"
+      : ".fighter.player"
+  );
+
+  if (hero) {
+    impactEffect(hero);
+    floatingDamage(hero, damage);
+  }
+
   screenShake();
 
+  // ここでHPを減らして勝敗確定
   applyHeroDamage(defenderSide, damage);
 
   render();
 
-
   await sleep(500);
   return true;
 }
+
 
 // ========================================
 // TURN MANAGEMENT
