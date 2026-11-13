@@ -1283,3 +1283,92 @@ body::before {
     font-size: 19px;
   }
 }
+
+
+/* ========================================
+   RASH MASTERS
+   PC HAND POSITION FIX
+======================================== */
+
+@media (min-width: 1001px) {
+
+  /* 全体を2カラムに */
+  .arena-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  /*
+   battle-column の子要素を
+   arena-layout のグリッドに参加させる
+  */
+  .battle-column {
+    display: contents;
+  }
+
+  /* 左側のバトル要素 */
+  .fighter.enemy,
+  .enemy-field,
+  .center-panel,
+  .player-field,
+  .fighter.player {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .fighter.enemy {
+    grid-row: 1;
+  }
+
+  .enemy-field {
+    grid-row: 2;
+  }
+
+  .center-panel {
+    grid-row: 3;
+  }
+
+  .player-field {
+    grid-row: 4;
+  }
+
+  .fighter.player {
+    grid-row: 5;
+  }
+
+  /* 手札は右側上段 */
+  .hand-panel {
+    position: static !important;
+    transform: none !important;
+    animation: none !important;
+
+    grid-column: 2;
+    grid-row: 1 / 4;
+
+    width: 100%;
+    min-width: 0;
+    align-self: start;
+  }
+
+  /* LOGは右側の手札の下 */
+  .battle-sidebar {
+    grid-column: 2;
+    grid-row: 4 / 6;
+
+    position: static;
+    padding-top: 0;
+    min-width: 0;
+  }
+
+  /* 操作バーは画面下部固定のまま */
+  .action-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: min(1500px, 100%);
+    z-index: 50;
+  }
+}
