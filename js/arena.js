@@ -18,11 +18,11 @@ const $ = id => document.getElementById(id);
 const RULES = {
   deckSize: 10,
   maxCopies: 3,
-  initialHand: 3,
+  initialHand: 5,
   maxHp: 10000,
   maxMana: 10,
   maxHand: 7,
-  maxField: 5,
+  maxField: 3,
   maxSummons: 2,
   maxAttacks: 1,
   turnSeconds: 120
@@ -1085,7 +1085,7 @@ async function initialize(user) {
 
   addLog("RASH MASTERS BATTLE START！", "summon");
 
-  setMessage("バトル開始！初期手札3枚から戦おう！");
+  setMessage("バトル開始！初期手札5枚から戦おう！");
   render();
 }
 
