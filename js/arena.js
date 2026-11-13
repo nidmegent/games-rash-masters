@@ -224,7 +224,7 @@ const SKILL_ALLOWED = {
   ON_SUMMON: ["DAMAGE", "HEAL", "ATK_UP", "DRAW"],
   ON_ATTACK: ["DAMAGE", "HEAL", "ATK_UP"],
   PASSIVE: ["ATK_UP", "SHIELD"],
-  ON_DESTROY: ["DAMAGE", "HEAL", "DRAW"]
+  ON_DESTROY: ["DAMAGE", "DRAW"]
 };
 
 function skillOf(card) {
