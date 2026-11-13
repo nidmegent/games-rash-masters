@@ -19,7 +19,7 @@ const RULES = {
   deckSize: 10,
   maxCopies: 3,
   initialHand: 5,
-  maxHp: 10000,
+  maxHp: 3000,
   maxMana: 10,
   maxHand: 7,
   maxField: 3,
