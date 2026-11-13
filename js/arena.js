@@ -898,6 +898,9 @@ function render() {
     game.finished || busy || autoEnding ||
     game.active !== "player";
 
+  $("surrenderButton").disabled =
+  game.finished;
+
   renderSlots("enemy");
   renderSlots("player");
   renderHand();
