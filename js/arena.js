@@ -188,6 +188,56 @@ function summonEffect(element) {
 }
 
 
+/* ========================================
+   RASH MASTERS SKILL EFFECTS VER.1
+======================================== */
+
+function showSkillEffect(side, unitId, type, amount = 0) {
+  const target = findSlot(side, unitId);
+  if (!target) return;
+
+  const effects = {
+    HEAL: {
+      className: "skill-heal",
+      text: `+${amount} HP`
+    },
+    ATK_UP: {
+      className: "skill-atk",
+      text: `+${amount} ATK`
+    },
+    SHIELD: {
+      className: "skill-shield",
+      text: `🛡 -${amount}`
+    },
+    DAMAGE: {
+      className: "skill-damage",
+      text: `-${amount}`
+    },
+    DRAW: {
+      className: "skill-draw",
+      text: `DRAW +${amount}`
+    }
+  };
+
+  const effect = effects[type];
+  if (!effect) return;
+
+  // 同じカードの古い演出を削除
+  target.querySelectorAll(".skill-vfx").forEach(el => el.remove());
+
+  const overlay = document.createElement("div");
+  overlay.className = `skill-vfx ${effect.className}`;
+
+  const text = document.createElement("span");
+  text.className = "skill-vfx-text";
+  text.textContent = effect.text;
+
+  overlay.append(text);
+  target.append(overlay);
+
+  setTimeout(() => overlay.remove(), 1100);
+}
+
 function screenShake() {
 
   const fields = document.querySelectorAll(
