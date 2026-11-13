@@ -350,6 +350,17 @@ cardForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  
+  // スキルデータを取得・検証
+  let skillData;
+
+  try {
+    skillData = getSkillData();
+  } catch (error) {
+    showMessage(error.message, "error");
+    return;
+  }
+
   const data = {
     name,
     rarity: rarity.value,
@@ -358,8 +369,15 @@ cardForm.addEventListener("submit", async (event) => {
     hp: hpValue,
     description: description.value.trim(),
     imagePath: image,
+
+    // スキル情報
+    skillTrigger: skillData.skillTrigger,
+    skillEffect: skillData.skillEffect,
+    skillValue: skillData.skillValue,
+
     updatedAt: serverTimestamp()
   };
+
 
   if (!["N", "R", "SR", "SSR", "UR"].includes(data.rarity)) {
     showMessage("レアリティが正しくありません。", "error");
@@ -432,7 +450,13 @@ function editCard(id) {
   saveButton.textContent = "変更を保存";
   cancelButton.classList.remove("hidden");
 
+
+  // カード画像を更新
   updateImagePreview();
+
+  // 保存済みスキルを編集フォームに反映
+  loadSkillData(card);
+
 
   document.querySelector(".editor-panel").scrollIntoView({
     behavior: "smooth",
@@ -500,8 +524,13 @@ function resetForm() {
 
   cancelButton.classList.add("hidden");
 
+  
   updateImagePreview();
+
+  // スキル設定を初期化
+  resetSkillData();
 }
+
 
 // ========================================
 // EVENTS
