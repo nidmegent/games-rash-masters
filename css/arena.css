@@ -1151,3 +1151,20 @@ body::before {
     padding-top: 0;
   }
 }
+
+
+/* PC版：テリトリーの縦幅だけ縮小 */
+@media (min-width: 1001px) {
+  .field {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .field-heading {
+    margin-bottom: 3px;
+  }
+
+  .slot {
+    height: 105px;
+  }
+}
