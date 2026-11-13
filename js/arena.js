@@ -976,29 +976,45 @@ document.addEventListener("keydown", event => {
 // RESULT
 // ========================================
 
+
 function finish(result) {
   if (!game || game.finished) return;
 
   game.finished = true;
+  busy = false;
+  autoEnding = false;
+  selectedAttacker = null;
+
   clearInterval(timerId);
+  closeSurrender();
 
-  addLog(
-    result === "VICTORY"
-      ? "あなたの勝利！CPUのHPが0になりました。"
-      : "あなたの敗北。プレイヤーHPが0になりました。",
-    "destroy"
-  );
+  const surrendered = result === "SURRENDER";
+  const victory = result === "VICTORY";
 
-  $("resultTitle").textContent = result;
+  if (!surrendered) {
+    addLog(
+      victory
+        ? "あなたの勝利！CPUのHPが0になりました。"
+        : "あなたの敗北。プレイヤーHPが0になりました。",
+      "destroy"
+    );
+  }
+
+  $("resultTitle").textContent =
+    victory ? "VICTORY" : "DEFEAT";
 
   $("resultDescription").textContent =
-    result === "VICTORY"
-      ? "CPUとの戦いに勝利しました！"
-      : "CPUとの戦いに敗北しました。";
+    surrendered
+      ? "降参により敗北しました。"
+      : victory
+        ? "CPUとの戦いに勝利しました！"
+        : "CPUとの戦いに敗北しました。";
 
   $("resultOverlay").classList.remove("hidden");
+
   render();
 }
+
 
 // ========================================
 // TIMER
