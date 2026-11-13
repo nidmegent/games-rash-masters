@@ -942,3 +942,39 @@ body {
     font-size: 12px;
   }
 }
+
+/* ========================================
+   RASH MASTERS VER.2.1
+   3 MONSTER TERRITORY
+======================================== */
+
+.slots {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 650px;
+  margin: 0 auto;
+  gap: 14px;
+}
+
+.slot {
+  height: 180px;
+}
+
+@media (max-width: 650px) {
+  .slots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .slot {
+    height: 150px;
+  }
+
+  .card-name {
+    font-size: 10px;
+  }
+
+  .stats {
+    font-size: 10px;
+  }
+}
