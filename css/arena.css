@@ -796,3 +796,149 @@ a {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* ========================================
+   RASH MASTERS VER.2.1
+   3-CARD HAND / FIXED ACTION BAR
+======================================== */
+
+/* 固定バーの分だけ下に余白を確保 */
+body {
+  padding-bottom: 115px;
+}
+
+/* 操作バーを常に画面下部へ固定 */
+.action-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 50;
+
+  width: min(1500px, 100%);
+  margin: 0;
+  padding: 12px 22px;
+
+  border: 1px solid #4c6489;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+
+  background: linear-gradient(
+    110deg,
+    #111d32f5,
+    #211a3cf7
+  );
+
+  backdrop-filter: blur(18px);
+  box-shadow: 0 -8px 35px #0009;
+}
+
+.action-panel .actions button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.action-panel .battle-message {
+  max-width: 60%;
+}
+
+/* PC版の手札も少し大きく */
+.hand {
+  gap: 12px;
+  min-height: 185px;
+  padding: 10px 2px;
+}
+
+.hand-card {
+  flex: 0 0 132px;
+  padding: 7px;
+}
+
+.hand-card img {
+  height: 135px;
+}
+
+.hand-card strong {
+  font-size: 12px;
+}
+
+.hand-card small {
+  font-size: 11px;
+}
+
+/* スマホ版 */
+@media (max-width: 650px) {
+  body {
+    padding-bottom: 145px;
+  }
+
+  .hand {
+    display: flex;
+    gap: 8px;
+    min-height: 180px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 10px 2px 14px;
+  }
+
+  /* 画面幅に3枚が収まるサイズ */
+  .hand-card {
+    flex: 0 0 calc((100% - 16px) / 3);
+    min-width: 0;
+    padding: 5px;
+    scroll-snap-align: start;
+  }
+
+  .hand-card img {
+    width: 100%;
+    height: clamp(105px, 31vw, 155px);
+    object-fit: contain;
+  }
+
+  .hand-card strong {
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .hand-card small {
+    font-size: 10px;
+    line-height: 1.5;
+    display: block;
+  }
+
+  .action-panel {
+    width: 100%;
+    padding: 10px 12px
+      calc(10px + env(safe-area-inset-bottom, 0px));
+    border-radius: 12px 12px 0 0;
+    gap: 8px;
+  }
+
+  .action-panel .battle-message {
+    max-width: 100%;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .action-panel .actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-panel .actions button {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 5px;
+    font-size: 12px;
+  }
+}
