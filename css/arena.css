@@ -978,3 +978,176 @@ body {
     font-size: 10px;
   }
 }
+
+
+/* =========================================
+   RASH MASTERS - PC LAYOUT UPDATE
+   Compact territory / Right-side hand
+   Fantasy background
+========================================= */
+
+/* 背景の魔力グラデーション */
+body {
+  background:
+    radial-gradient(
+      ellipse at 16% 22%,
+      rgba(106, 56, 185, .25),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 80% 62%,
+      rgba(21, 151, 184, .20),
+      transparent 43%
+    ),
+    radial-gradient(
+      ellipse at 52% 95%,
+      rgba(94, 38, 136, .22),
+      transparent 48%
+    ),
+    #070914;
+  background-attachment: fixed;
+}
+
+/* 背景に薄い魔法陣 */
+body::before {
+  content: "";
+  position: fixed;
+  width: min(70vw, 800px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(126, 135, 255, .09);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 65px rgba(126, 135, 255, .025),
+    0 0 0 130px rgba(126, 135, 255, .018),
+    inset 0 0 110px rgba(93, 66, 193, .08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.arena-header,
+.arena-layout {
+  position: relative;
+  z-index: 1;
+}
+
+/* PC専用 */
+@media (min-width: 1001px) {
+
+  .arena-layout {
+    grid-template-columns:
+      minmax(0, 1fr) 330px;
+    gap: 14px;
+  }
+
+  /* 左側バトルフィールド */
+  .battle-column {
+    gap: 8px;
+  }
+
+  /* テリトリー外枠をコンパクトに */
+  .field {
+    padding: 8px 12px;
+  }
+
+  .field-heading {
+    margin-bottom: 5px;
+  }
+
+  .slots {
+    max-width: 500px;
+    gap: 10px;
+  }
+
+  .slot {
+    height: 125px;
+  }
+
+  /* 中央ステータス */
+  .center-panel {
+    padding: 7px;
+  }
+
+  .center-stat strong {
+    font-size: 15px;
+  }
+
+  /* HPエリア */
+  .fighter {
+    padding: 9px 13px;
+  }
+
+  .fighter h2 {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+
+  /* 手札を右側に配置 */
+  .hand-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 330px;
+    z-index: 5;
+    padding: 12px;
+  }
+
+  .hand {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .hand-card {
+    width: 100%;
+    min-width: 0;
+    padding: 5px;
+  }
+
+  .hand-card img {
+    height: 105px;
+  }
+
+  .hand-card strong {
+    font-size: 10px;
+  }
+
+  .hand-card small {
+    font-size: 9px;
+  }
+
+  /* LOGを手札の下へ */
+  .battle-sidebar {
+    padding-top: 390px;
+    position: sticky;
+    top: 12px;
+  }
+
+  .log-content {
+    height: min(34vh, 340px);
+  }
+
+  .rule-panel {
+    display: none;
+  }
+}
+
+/* スマホ・タブレットは従来配置 */
+@media (max-width: 1000px) {
+  body::before {
+    width: 90vw;
+  }
+
+  .hand-panel {
+    position: static;
+    width: auto;
+  }
+
+  .battle-sidebar {
+    padding-top: 0;
+  }
+}
