@@ -927,6 +927,51 @@ $("enemySlots").addEventListener("click", () => {
   handlePlayerAttack();
 });
 
+
+// ========================================
+// SURRENDER SYSTEM - VER.2.2
+// ========================================
+
+let surrenderOpen = false;
+
+function closeSurrender() {
+  surrenderOpen = false;
+  $("surrenderOverlay").classList.add("hidden");
+}
+
+$("surrenderButton").addEventListener("click", () => {
+  if (!game || game.finished || surrenderOpen) return;
+
+  surrenderOpen = true;
+  $("surrenderOverlay").classList.remove("hidden");
+  $("cancelSurrender").focus();
+});
+
+$("cancelSurrender").addEventListener("click", () => {
+  closeSurrender();
+});
+
+$("confirmSurrender").addEventListener("click", () => {
+  if (!surrenderOpen || !game || game.finished) return;
+
+  closeSurrender();
+
+  addLog(
+    "あなたは降参しました。バトルは敗北となります。",
+    "destroy"
+  );
+
+  finish("SURRENDER");
+});
+
+// Escapeキーでキャンセル
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && surrenderOpen) {
+    closeSurrender();
+  }
+});
+
+
 // ========================================
 // RESULT
 // ========================================
