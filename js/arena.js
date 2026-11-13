@@ -6,26 +6,25 @@ import {
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs
+  collection, doc, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 // ========================================
-// RASH MASTERS - BATTLE ARENA VER.2
+// RASH MASTERS - ARENA VER.2.1
 // ========================================
 
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 const RULES = {
   deckSize: 10,
   maxCopies: 3,
+  initialHand: 3,
   maxHp: 10000,
   maxMana: 10,
   maxHand: 7,
   maxField: 5,
   maxSummons: 2,
+  maxAttacks: 1,
   turnSeconds: 120
 };
 
@@ -35,52 +34,35 @@ let selectedAttacker = null;
 let busy = false;
 let autoEnding = false;
 let unitSerial = 0;
+let turnToken = 0;
 
-const sleep = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
-function randomId() {
-  unitSerial++;
-  return `unit-${unitSerial}`;
-}
+const sleep = ms =>
+  new Promise(resolve => setTimeout(resolve, ms));
 
 function numeric(value, fallback) {
   if (value === null || value === undefined || value === "") {
     return fallback;
   }
-
   const n = Number(value);
-
-  return Number.isFinite(n) && n >= 0
-    ? n
-    : fallback;
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
 function cardCost(card) {
-  return Math.min(
-    RULES.maxMana,
-    Math.floor(numeric(
-      card.cost ?? card.manaCost ?? card.mana,
-      1
-    ))
-  );
+  return Math.min(RULES.maxMana, Math.floor(numeric(
+    card.cost ?? card.manaCost ?? card.mana, 1
+  )));
 }
 
 function cardAttack(card) {
   return Math.floor(numeric(
-    card.atk ?? card.attack ?? card.ATK,
-    500
+    card.atk ?? card.attack ?? card.ATK, 500
   ));
 }
 
 function cardHp(card) {
-  return Math.max(
-    1,
-    Math.floor(numeric(
-      card.hp ?? card.health ?? card.HP,
-      1000
-    ))
-  );
+  return Math.max(1, Math.floor(numeric(
+    card.hp ?? card.health ?? card.HP, 1000
+  )));
 }
 
 function cardName(card) {
@@ -89,12 +71,9 @@ function cardName(card) {
 
 function imageUrl(path) {
   if (typeof path !== "string") return "";
-
   const clean = path.replace(/^\/+/, "");
 
-  if (
-    !/^assets\/cards\/(N|R|SR|SSR|UR)\/[\w.-]+\.(png|jpe?g|webp|gif)$/i.test(clean)
-  ) {
+  if (!/^assets\/cards\/(N|R|SR|SSR|UR)\/[\w.-]+\.(png|jpe?g|webp|gif)$/i.test(clean)) {
     return "";
   }
 
@@ -103,23 +82,17 @@ function imageUrl(path) {
 
 function shuffle(cards) {
   const result = [...cards];
-
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-
-    [result[i], result[j]] = [
-      result[j],
-      result[i]
-    ];
+    [result[i], result[j]] = [result[j], result[i]];
   }
-
   return result;
 }
 
 function makeUnit(card) {
   return {
     ...card,
-    instanceId: randomId(),
+    instanceId: `unit-${++unitSerial}`,
     currentHp: cardHp(card),
     maxHp: cardHp(card),
     attackValue: cardAttack(card),
@@ -138,29 +111,20 @@ function setMessage(text) {
 
 function addLog(text, type = "normal") {
   if (!game) return;
-
-  game.logs.unshift({
-    text,
-    type
-  });
-
+  game.logs.unshift({ text, type });
   game.logs = game.logs.slice(0, 60);
-
   renderLog();
 }
 
 function renderLog() {
   const container = $("battleLog");
   container.replaceChildren();
-
   if (!game) return;
 
   for (const item of game.logs) {
     const div = document.createElement("div");
-
     div.className = `log-entry ${item.type}`;
     div.textContent = item.text;
-
     container.append(div);
   }
 }
@@ -171,9 +135,7 @@ function renderLog() {
 
 function elementCenter(element) {
   if (!element) return null;
-
   const rect = element.getBoundingClientRect();
-
   return {
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2
@@ -182,29 +144,24 @@ function elementCenter(element) {
 
 function floatingDamage(element, amount) {
   const point = elementCenter(element);
-
   if (!point) return;
 
   const label = document.createElement("div");
   label.className = "float-damage";
   label.textContent = `-${amount}`;
-
   label.style.left = `${point.x}px`;
   label.style.top = `${point.y}px`;
 
   $("effectLayer").append(label);
-
   setTimeout(() => label.remove(), 900);
 }
 
 function impactEffect(element) {
   const point = elementCenter(element);
-
   if (!point) return;
 
   const ring = document.createElement("div");
   ring.className = "impact-ring";
-
   ring.style.left = `${point.x}px`;
   ring.style.top = `${point.y}px`;
 
@@ -225,7 +182,6 @@ function summonEffect(element) {
 
   const ring = document.createElement("div");
   ring.className = "summon-ring";
-
   element.append(ring);
 
   setTimeout(() => ring.remove(), 700);
@@ -233,7 +189,6 @@ function summonEffect(element) {
 
 function screenShake() {
   const element = $("battleColumn");
-
   element.classList.remove("screen-shake");
   void element.offsetWidth;
   element.classList.add("screen-shake");
@@ -244,21 +199,13 @@ function screenShake() {
 }
 
 function findSlot(side, instanceId) {
-  return document.querySelector(
-    `[data-side="${side}"][data-unit-id="${instanceId}"]`
-  );
-}
-
-async function destructionEffect(element) {
-  if (!element) return;
-
-  element.classList.add("destroy-animation");
-
-  await sleep(550);
+  return [...document.querySelectorAll(
+    `[data-side="${side}"][data-unit-id]`
+  )].find(el => el.dataset.unitId === instanceId) || null;
 }
 
 // ========================================
-// DECK VALIDATION
+// DECK
 // ========================================
 
 function expandSavedDeck(deck, cardMap) {
@@ -273,36 +220,34 @@ function expandSavedDeck(deck, cardMap) {
     if (
       !entry ||
       typeof entry.cardId !== "string" ||
-      !Number.isSafeInteger(entry.quantity) ||
-      entry.quantity < 1
+      !Number.isSafeInteger(Number(entry.quantity)) ||
+      Number(entry.quantity) < 1
     ) {
       throw new Error("デッキのカード情報が不正です。");
     }
 
     const card = cardMap.get(entry.cardId);
-
     if (!card) {
       throw new Error("存在しないカードが含まれています。");
     }
 
-    const count =
-      (counts.get(entry.cardId) || 0) +
-      entry.quantity;
+    const quantity = Number(entry.quantity);
+    const total = (counts.get(entry.cardId) || 0) + quantity;
 
-    if (count > RULES.maxCopies) {
+    if (total > RULES.maxCopies) {
       throw new Error("同じカードは最大3枚までです。");
     }
 
-    counts.set(entry.cardId, count);
+    counts.set(entry.cardId, total);
 
-    for (let i = 0; i < entry.quantity; i++) {
+    for (let i = 0; i < quantity; i++) {
       expanded.push({ ...card });
     }
   }
 
   if (
     expanded.length !== RULES.deckSize ||
-    deck.totalCards !== RULES.deckSize
+    Number(deck.totalCards) !== RULES.deckSize
   ) {
     throw new Error("10枚デッキが必要です。");
   }
@@ -311,7 +256,7 @@ function expandSavedDeck(deck, cardMap) {
 }
 
 // ========================================
-// DRAW
+// DRAW / SUMMON
 // ========================================
 
 function drawCards(side, amount = 1) {
@@ -319,10 +264,8 @@ function drawCards(side, amount = 1) {
   const label = side === "player" ? "あなた" : "CPU";
 
   for (let i = 0; i < amount; i++) {
-    if (fighter.deck.length === 0) {
-      addLog(
-        `${label}はデッキが空のためドローできませんでした。`
-      );
+    if (!fighter.deck.length) {
+      addLog(`${label}はデッキ切れでドローできません。`);
       break;
     }
 
@@ -330,7 +273,7 @@ function drawCards(side, amount = 1) {
 
     if (fighter.hand.length >= RULES.maxHand) {
       addLog(
-        `${label}は手札上限7枚のため「${cardName(card)}」を破棄しました。`,
+        `${label}は手札上限のため「${cardName(card)}」を破棄しました。`,
         "destroy"
       );
       continue;
@@ -338,47 +281,40 @@ function drawCards(side, amount = 1) {
 
     fighter.hand.push(card);
 
-    if (side === "player") {
-      addLog(`「${cardName(card)}」をドローしました。`);
-    } else {
-      addLog("CPUがカードを1枚ドローしました。");
-    }
+    addLog(
+      side === "player"
+        ? `「${cardName(card)}」をドロー！`
+        : "CPUがカードを1枚ドローしました。"
+    );
   }
 }
-
-// ========================================
-// SUMMON
-// ========================================
 
 function canSummon(side, index) {
   if (!game || game.finished) return false;
 
   const fighter = game[side];
   const card = fighter.hand[index];
-
   if (!card) return false;
 
   return (
+    game.active === side &&
+    game.phase === "MAIN" &&
     fighter.field.length < RULES.maxField &&
     fighter.summons < RULES.maxSummons &&
     fighter.mana >= cardCost(card)
   );
 }
 
-function summon(side, handIndex) {
-  if (!canSummon(side, handIndex)) {
-    return false;
-  }
+function summon(side, index) {
+  if (!canSummon(side, index)) return false;
 
   const fighter = game[side];
-  const card = fighter.hand[handIndex];
+  const card = fighter.hand[index];
   const cost = cardCost(card);
 
   fighter.mana -= cost;
   fighter.summons++;
-
-  // 手札から減るのは召喚したカードだけ
-  fighter.hand.splice(handIndex, 1);
+  fighter.hand.splice(index, 1);
 
   const unit = makeUnit(card);
   fighter.field.push(unit);
@@ -389,15 +325,12 @@ function summon(side, handIndex) {
   );
 
   render();
-
-  const slot = findSlot(side, unit.instanceId);
-  summonEffect(slot);
-
+  summonEffect(findSlot(side, unit.instanceId));
   return true;
 }
 
 // ========================================
-// ATTACK VALIDATION
+// ATTACK - ONE ATTACK PER TURN
 // ========================================
 
 function canAttack(side, unit) {
@@ -406,6 +339,7 @@ function canAttack(side, unit) {
   return (
     game.active === side &&
     game.phase === "BATTLE" &&
+    game[side].attacksUsed < RULES.maxAttacks &&
     !unit.attacked &&
     !unit.summonedThisTurn &&
     unit.currentHp > 0
@@ -413,109 +347,87 @@ function canAttack(side, unit) {
 }
 
 function availableAttackers(side) {
-  return game[side].field.filter(
-    (unit) => canAttack(side, unit)
-  );
+  return game[side].field.filter(unit => canAttack(side, unit));
 }
-
-// ========================================
-// DAMAGE & COMBAT
-// ========================================
 
 function applyHeroDamage(side, amount) {
   if (game.finished) return;
 
   const damage = Math.max(0, amount);
-
-  game[side].hp = Math.max(
-    0,
-    game[side].hp - damage
-  );
+  game[side].hp = Math.max(0, game[side].hp - damage);
 
   addLog(
-    `${side === "player" ? "あなた" : "CPU"}のHPが${damage}減少！残りHP：${game[side].hp}`,
+    `${side === "player" ? "あなた" : "CPU"}に${damage}ダメージ！残りHP：${game[side].hp}`,
     "damage"
   );
 
   if (game[side].hp === 0) {
-    finish(
-      side === "enemy" ? "VICTORY" : "DEFEAT"
-    );
+    finish(side === "enemy" ? "VICTORY" : "DEFEAT");
   }
 }
 
-async function attackUnit(
-  attackerSide,
-  attackerId,
-  defenderId
-) {
+async function attackUnit(attackerSide, attackerId, defenderId) {
   if (!game || game.finished) return false;
 
   const defenderSide =
     attackerSide === "player" ? "enemy" : "player";
 
   const attacker = game[attackerSide].field.find(
-    (unit) => unit.instanceId === attackerId
+    u => u.instanceId === attackerId
   );
 
   const defender = game[defenderSide].field.find(
-    (unit) => unit.instanceId === defenderId
+    u => u.instanceId === defenderId
   );
 
-  if (!attacker || !defender) return false;
-  if (!canAttack(attackerSide, attacker)) return false;
+  if (!attacker || !defender || !canAttack(attackerSide, attacker)) {
+    return false;
+  }
 
+  // 全体の攻撃権をここで消費
+  game[attackerSide].attacksUsed++;
   attacker.attacked = true;
 
   const damage = attacker.attackValue;
+
+  // 攻撃側は反撃ダメージを受けない
+  defender.currentHp = Math.max(0, defender.currentHp - damage);
 
   addLog(
     `「${cardName(attacker)}」が「${cardName(defender)}」を攻撃！`,
     "damage"
   );
 
-  // Aルール：防御側だけがダメージを受ける
-  defender.currentHp = Math.max(
-    0,
-    defender.currentHp - damage
-  );
-
   addLog(
-    `「${cardName(defender)}」に${damage}ダメージ！残りHP：${defender.currentHp}/${defender.maxHp}`,
+    `「${cardName(defender)}」に${damage}ダメージ。残りHP：${defender.currentHp}/${defender.maxHp}`,
     "damage"
   );
 
-  // 攻撃側のHPは一切減らさない
   render();
 
-  const targetElement = findSlot(
-    defenderSide,
-    defender.instanceId
-  );
-
-  impactEffect(targetElement);
-  floatingDamage(targetElement, damage);
+  const target = findSlot(defenderSide, defenderId);
+  impactEffect(target);
+  floatingDamage(target, damage);
   screenShake();
 
   await sleep(450);
 
   if (defender.currentHp <= 0) {
     addLog(
-      `「${cardName(defender)}」は「${cardName(attacker)}」から受けた戦闘ダメージでHPが0になり、破壊されました。`,
+      `「${cardName(defender)}」は「${cardName(attacker)}」の攻撃でHPが0になり、破壊されました。`,
       "destroy"
     );
 
-    await destructionEffect(
-      findSlot(defenderSide, defender.instanceId)
-    );
+    const element = findSlot(defenderSide, defenderId);
+    if (element) element.classList.add("destroy-animation");
+
+    await sleep(550);
 
     const index = game[defenderSide].field.findIndex(
-      (unit) => unit.instanceId === defender.instanceId
+      u => u.instanceId === defenderId
     );
 
-    if (index !== -1) {
-      game[defenderSide].field.splice(index, 1);
-    }
+    if (index !== -1) game[defenderSide].field.splice(index, 1);
   }
 
   render();
@@ -529,17 +441,17 @@ async function attackHero(attackerSide, attackerId) {
     attackerSide === "player" ? "enemy" : "player";
 
   const attacker = game[attackerSide].field.find(
-    (unit) => unit.instanceId === attackerId
+    u => u.instanceId === attackerId
   );
 
-  if (!attacker) return false;
-  if (!canAttack(attackerSide, attacker)) return false;
-
-  // 相手のモンスターがいる間は直接攻撃不可
-  if (game[defenderSide].field.length > 0) {
+  if (!attacker || !canAttack(attackerSide, attacker)) {
     return false;
   }
 
+  if (game[defenderSide].field.length > 0) return false;
+
+  // 直接攻撃でも全体の攻撃権を消費
+  game[attackerSide].attacksUsed++;
   attacker.attacked = true;
 
   addLog(
@@ -547,35 +459,29 @@ async function attackHero(attackerSide, attackerId) {
     "damage"
   );
 
-  const heroElement = document.querySelector(
-    defenderSide === "enemy"
-      ? ".fighter.enemy"
-      : ".fighter.player"
+  const hero = document.querySelector(
+    defenderSide === "enemy" ? ".fighter.enemy" : ".fighter.player"
   );
 
-  impactEffect(heroElement);
-  floatingDamage(heroElement, attacker.attackValue);
+  impactEffect(hero);
+  floatingDamage(hero, attacker.attackValue);
   screenShake();
 
-  // ダメージは必ず攻撃対象のプレイヤーだけ
-  applyHeroDamage(
-    defenderSide,
-    attacker.attackValue
-  );
-
+  applyHeroDamage(defenderSide, attacker.attackValue);
   render();
-  await sleep(500);
 
+  await sleep(500);
   return true;
 }
 
 // ========================================
-// TURN SYSTEM
+// TURN MANAGEMENT
 // ========================================
 
 function startTurn(side) {
   if (!game || game.finished) return;
 
+  turnToken++;
   game.active = side;
   game.phase = "MAIN";
   game.seconds = RULES.turnSeconds;
@@ -585,11 +491,9 @@ function startTurn(side) {
 
   const fighter = game[side];
 
-  // 初回はマナ1、次回以降に最大マナ+1
   if (fighter.turnsPlayed > 0) {
     fighter.maxMana = Math.min(
-      RULES.maxMana,
-      fighter.maxMana + 1
+      RULES.maxMana, fighter.maxMana + 1
     );
   }
 
@@ -597,15 +501,15 @@ function startTurn(side) {
   fighter.mana = fighter.maxMana;
   fighter.summons = 0;
 
+  // 毎ターン、全体攻撃権を1回にリセット
+  fighter.attacksUsed = 0;
+
   for (const unit of fighter.field) {
     unit.attacked = false;
     unit.summonedThisTurn = false;
   }
 
-  // 2ターン目以降は1枚ドロー
-  if (fighter.turnsPlayed > 1) {
-    drawCards(side, 1);
-  }
+  if (fighter.turnsPlayed > 1) drawCards(side);
 
   addLog(
     `━━ ${side === "player" ? "あなた" : "CPU"}のターン開始 ━━`,
@@ -614,7 +518,7 @@ function startTurn(side) {
 
   setMessage(
     side === "player"
-      ? "カードを召喚し、攻撃フェーズへ進もう！"
+      ? "カードを召喚して、攻撃フェーズへ進もう！"
       : "CPUが行動しています..."
   );
 
@@ -623,89 +527,58 @@ function startTurn(side) {
 
 function beginBattlePhase() {
   if (
-    !game ||
-    game.finished ||
-    busy ||
+    !game || game.finished || busy ||
     game.active !== "player" ||
     game.phase !== "MAIN"
-  ) {
-    return;
-  }
+  ) return;
 
   game.phase = "BATTLE";
   selectedAttacker = null;
 
   addLog("あなたの攻撃フェーズ開始");
-
   render();
 
-  if (availableAttackers("player").length === 0) {
-    setMessage(
-      "攻撃できるモンスターがいないため、自動でターンを終了します。"
-    );
-
+  if (!availableAttackers("player").length) {
+    setMessage("攻撃可能なモンスターがいないため、自動でターン終了します。");
     scheduleAutoEnd();
   } else {
-    setMessage(
-      "攻撃するモンスターを選び、攻撃対象をクリック！"
-    );
+    setMessage("攻撃するモンスターを1体選んでください！");
   }
 }
 
 function scheduleAutoEnd() {
   if (
-    !game ||
-    game.finished ||
+    !game || game.finished ||
     game.active !== "player" ||
     game.phase !== "BATTLE" ||
-    autoEnding
-  ) {
-    return;
-  }
+    autoEnding || busy
+  ) return;
 
-  if (availableAttackers("player").length > 0) {
-    return;
-  }
+  if (availableAttackers("player").length > 0) return;
 
   autoEnding = true;
+  const token = turnToken;
 
-  setMessage(
-    "すべての攻撃が終了！CPUのターンへ移行します..."
-  );
+  setMessage("攻撃終了！自動でCPUのターンへ移行します...");
 
   setTimeout(() => {
     if (
-      game &&
-      !game.finished &&
+      game && !game.finished &&
       game.active === "player" &&
-      game.phase === "BATTLE"
+      game.phase === "BATTLE" &&
+      turnToken === token &&
+      !busy
     ) {
       endPlayerTurn();
     }
   }, 900);
 }
 
-function checkAutoEnd() {
-  if (!game || game.finished) return;
-
-  if (
-    game.active === "player" &&
-    game.phase === "BATTLE" &&
-    availableAttackers("player").length === 0
-  ) {
-    scheduleAutoEnd();
-  }
-}
-
 async function endPlayerTurn() {
   if (
-    !game ||
-    game.finished ||
-    game.active !== "player" ||
-    busy
-  ) {
-    return;
-  }
+    !game || game.finished || busy ||
+    game.active !== "player"
+  ) return;
 
   busy = true;
   autoEnding = false;
@@ -714,9 +587,7 @@ async function endPlayerTurn() {
   addLog("あなたのターン終了");
 
   startTurn("enemy");
-
   await sleep(650);
-
   await cpuTurn();
 }
 
@@ -726,18 +597,15 @@ async function cpuTurn() {
     return;
   }
 
-  // CPU召喚
+  // CPUも1ターン最大2体召喚
   for (let i = 0; i < RULES.maxSummons; i++) {
     if (game.finished) break;
 
     const index = game.enemy.hand.findIndex(
-      (card) => cardCost(card) <= game.enemy.mana
+      card => cardCost(card) <= game.enemy.mana
     );
 
-    if (index === -1) break;
-
-    if (!summon("enemy", index)) break;
-
+    if (index < 0 || !summon("enemy", index)) break;
     await sleep(500);
   }
 
@@ -748,45 +616,33 @@ async function cpuTurn() {
 
   game.phase = "BATTLE";
   addLog("CPUの攻撃フェーズ開始");
-
   render();
+
   await sleep(450);
 
-  // 先に攻撃できるユニットだけを記録
-  const attackers = game.enemy.field
-    .filter((unit) => !unit.summonedThisTurn)
-    .map((unit) => unit.instanceId);
+  // CPUも場全体で1回だけ攻撃
+  const attacker = game.enemy.field.find(
+    unit => canAttack("enemy", unit)
+  );
 
-  for (const attackerId of attackers) {
-    if (game.finished) break;
-
-    const attacker = game.enemy.field.find(
-      (unit) => unit.instanceId === attackerId
-    );
-
-    if (!canAttack("enemy", attacker)) continue;
-
+  if (attacker) {
     if (game.player.field.length > 0) {
-      const target = game.player.field[0];
-
       await attackUnit(
         "enemy",
-        attackerId,
-        target.instanceId
+        attacker.instanceId,
+        game.player.field[0].instanceId
       );
     } else {
-      await attackHero("enemy", attackerId);
+      await attackHero("enemy", attacker.instanceId);
     }
-
-    await sleep(300);
+  } else {
+    addLog("CPUには攻撃可能なモンスターがいません。");
   }
 
   if (!game.finished) {
     addLog("CPUのターン終了");
-
     game.turn++;
     busy = false;
-
     startTurn("player");
   } else {
     busy = false;
@@ -795,46 +651,34 @@ async function cpuTurn() {
   render();
 }
 
-// ========================================
-// PLAYER ATTACK
-// ========================================
-
 async function handlePlayerAttack(targetId = null) {
   if (
-    !game ||
-    game.finished ||
-    busy ||
+    !game || game.finished || busy ||
     game.active !== "player" ||
     game.phase !== "BATTLE" ||
     !selectedAttacker
-  ) {
-    return;
-  }
+  ) return;
 
   const attackerId = selectedAttacker;
-
-  busy = true;
   selectedAttacker = null;
+  busy = true;
 
   let success = false;
 
-  if (targetId) {
-    success = await attackUnit(
-      "player",
-      attackerId,
-      targetId
-    );
-  } else if (game.enemy.field.length === 0) {
-    success = await attackHero(
-      "player",
-      attackerId
-    );
+  try {
+    if (targetId) {
+      success = await attackUnit(
+        "player", attackerId, targetId
+      );
+    } else if (game.enemy.field.length === 0) {
+      success = await attackHero("player", attackerId);
+    }
+  } finally {
+    busy = false;
   }
 
-  busy = false;
-
   if (success) {
-    checkAutoEnd();
+    scheduleAutoEnd();
   } else {
     setMessage("攻撃できませんでした。対象を確認してください。");
   }
@@ -843,21 +687,18 @@ async function handlePlayerAttack(targetId = null) {
 }
 
 // ========================================
-// RENDER CARDS
+// RENDER
 // ========================================
 
 function createCardImage(card) {
-  const image = document.createElement("img");
-
+  const img = document.createElement("img");
   const src = imageUrl(card.imagePath);
 
-  if (src) image.src = src;
+  if (src) img.src = src;
+  img.alt = cardName(card);
+  img.onerror = () => img.remove();
 
-  image.alt = cardName(card);
-
-  image.onerror = () => image.remove();
-
-  return image;
+  return img;
 }
 
 function renderSlots(side) {
@@ -869,7 +710,6 @@ function renderSlots(side) {
 
   for (let i = 0; i < RULES.maxField; i++) {
     const unit = game[side].field[i];
-
     const slot = document.createElement("div");
     slot.className = "slot";
 
@@ -909,10 +749,9 @@ function renderSlots(side) {
       slot.classList.add("targetable");
     }
 
-    const cardBox = document.createElement("div");
-    cardBox.className = "field-card";
-
-    cardBox.append(createCardImage(unit));
+    const box = document.createElement("div");
+    box.className = "field-card";
+    box.append(createCardImage(unit));
 
     const name = document.createElement("div");
     name.className = "card-name";
@@ -928,8 +767,8 @@ function renderSlots(side) {
     hp.textContent = `♥${unit.currentHp}`;
 
     stats.append(atk, hp);
-    cardBox.append(name, stats);
-    slot.append(cardBox);
+    box.append(name, stats);
+    slot.append(box);
 
     if (side === "player") {
       slot.addEventListener("click", () => {
@@ -937,7 +776,7 @@ function renderSlots(side) {
 
         if (!canAttack("player", unit)) {
           setMessage(
-            "このモンスターは攻撃できません。召喚ターン中か、攻撃済みです。"
+            "攻撃できません。召喚ターン中・攻撃済み・攻撃権使用済みのいずれかです。"
           );
           return;
         }
@@ -949,7 +788,7 @@ function renderSlots(side) {
 
         setMessage(
           selectedAttacker
-            ? "攻撃対象を選択！相手の場が空なら敵フィールドをクリック。"
+            ? "攻撃対象を選択！相手の場が空なら敵フィールドをタップ。"
             : "攻撃選択を解除しました。"
         );
 
@@ -958,7 +797,6 @@ function renderSlots(side) {
     } else {
       slot.addEventListener("click", () => {
         if (!selectedAttacker || busy) return;
-
         handlePlayerAttack(unit.instanceId);
       });
     }
@@ -973,7 +811,6 @@ function renderHand() {
 
   game.player.hand.forEach((card, index) => {
     const button = document.createElement("button");
-
     button.type = "button";
     button.className = "hand-card";
 
@@ -989,26 +826,20 @@ function renderHand() {
     button.append(name, cost);
 
     button.disabled =
-      game.finished ||
-      busy ||
+      game.finished || busy ||
       game.active !== "player" ||
       game.phase !== "MAIN" ||
       !canSummon("player", index);
 
     button.addEventListener("click", () => {
       if (
-        game.finished ||
-        busy ||
+        !game || game.finished || busy ||
         game.active !== "player" ||
         game.phase !== "MAIN"
-      ) {
-        return;
-      }
+      ) return;
 
       if (summon("player", index)) {
-        setMessage(
-          `「${cardName(card)}」を召喚しました！`
-        );
+        setMessage(`「${cardName(card)}」を召喚しました！`);
       }
     });
 
@@ -1059,16 +890,13 @@ function render() {
   $("turnTimer").textContent = game.seconds;
 
   $("attackButton").disabled =
-    game.finished ||
-    busy ||
+    game.finished || busy ||
     game.active !== "player" ||
     game.phase !== "MAIN";
 
   $("endTurnButton").disabled =
-    game.finished ||
-    busy ||
-    game.active !== "player" ||
-    autoEnding;
+    game.finished || busy || autoEnding ||
+    game.active !== "player";
 
   renderSlots("enemy");
   renderSlots("player");
@@ -1080,28 +908,21 @@ function render() {
 // ========================================
 
 $("attackButton").addEventListener(
-  "click",
-  beginBattlePhase
+  "click", beginBattlePhase
 );
 
 $("endTurnButton").addEventListener(
-  "click",
-  () => endPlayerTurn()
+  "click", () => endPlayerTurn()
 );
 
-// 相手フィールドが空なら直接攻撃
-$("enemySlots").addEventListener("click", (event) => {
+$("enemySlots").addEventListener("click", () => {
   if (
-    !game ||
-    game.finished ||
-    busy ||
+    !game || game.finished || busy ||
     !selectedAttacker ||
     game.active !== "player" ||
     game.phase !== "BATTLE" ||
     game.enemy.field.length !== 0
-  ) {
-    return;
-  }
+  ) return;
 
   handlePlayerAttack();
 });
@@ -1131,7 +952,6 @@ function finish(result) {
       : "CPUとの戦いに敗北しました。";
 
   $("resultOverlay").classList.remove("hidden");
-
   render();
 }
 
@@ -1144,27 +964,15 @@ function startTimer() {
 
   timerId = setInterval(() => {
     if (
-      !game ||
-      game.finished ||
-      busy ||
-      autoEnding ||
-      game.active !== "player"
-    ) {
-      return;
-    }
+      !game || game.finished || busy ||
+      autoEnding || game.active !== "player"
+    ) return;
 
-    game.seconds = Math.max(
-      0,
-      game.seconds - 1
-    );
-
+    game.seconds = Math.max(0, game.seconds - 1);
     $("turnTimer").textContent = game.seconds;
 
     if (game.seconds === 0) {
-      addLog(
-        "制限時間120秒が経過しました。自動でターン終了します。"
-      );
-
+      addLog("制限時間120秒が経過したためターン終了。");
       endPlayerTurn();
     }
   }, 1000);
@@ -1209,15 +1017,10 @@ async function initialize(user) {
 
   const [deckSnapshot, cardsSnapshot] =
     await Promise.all([
-      getDoc(
-        doc(
-          db,
-          "users",
-          user.uid,
-          "decks",
-          preparation.deckId
-        )
-      ),
+      getDoc(doc(
+        db, "users", user.uid,
+        "decks", preparation.deckId
+      )),
       getDocs(collection(db, "cards"))
     ]);
 
@@ -1226,23 +1029,18 @@ async function initialize(user) {
   }
 
   const cardMap = new Map(
-    cardsSnapshot.docs.map((item) => [
+    cardsSnapshot.docs.map(item => [
       item.id,
-      {
-        ...item.data(),
-        id: item.id
-      }
+      { ...item.data(), id: item.id }
     ])
   );
 
   const playerCards = expandSavedDeck(
-    deckSnapshot.data(),
-    cardMap
+    deckSnapshot.data(), cardMap
   );
 
-  // CPUは試作版として同じカード構成を使用
   const enemyCards = playerCards.map(
-    (card) => ({ ...card })
+    card => ({ ...card })
   );
 
   game = {
@@ -1258,6 +1056,7 @@ async function initialize(user) {
       mana: 1,
       maxMana: 1,
       summons: 0,
+      attacksUsed: 0,
       turnsPlayed: 0,
       deck: shuffle(playerCards),
       hand: [],
@@ -1269,6 +1068,7 @@ async function initialize(user) {
       mana: 1,
       maxMana: 1,
       summons: 0,
+      attacksUsed: 0,
       turnsPlayed: 0,
       deck: shuffle(enemyCards),
       hand: [],
@@ -1276,18 +1076,16 @@ async function initialize(user) {
     }
   };
 
-  drawCards("player", 5);
-  drawCards("enemy", 5);
+  // 初期手札は双方3枚
+  drawCards("player", RULES.initialHand);
+  drawCards("enemy", RULES.initialHand);
 
   startTurn("player");
   startTimer();
 
   addLog("RASH MASTERS BATTLE START！", "summon");
 
-  setMessage(
-    "バトル開始！手札からカードを召喚しよう！"
-  );
-
+  setMessage("バトル開始！初期手札3枚から戦おう！");
   render();
 }
 
@@ -1295,7 +1093,7 @@ async function initialize(user) {
 // AUTH
 // ========================================
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async user => {
   if (!user) {
     location.replace("login.html");
     return;
@@ -1305,7 +1103,6 @@ onAuthStateChanged(auth, async (user) => {
     await initialize(user);
   } catch (error) {
     console.error(error);
-
     setMessage(
       error.message || "バトル開始に失敗しました。"
     );
