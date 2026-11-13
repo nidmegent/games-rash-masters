@@ -215,6 +215,186 @@ function findSlot(side, instanceId) {
   )].find(el => el.dataset.unitId === instanceId) || null;
 }
 
+
+ // ========================================
+ // CARD SKILLS VER.1
+ // ========================================
+
+const SKILL_ALLOWED = {
+  ON_SUMMON: ["DAMAGE", "HEAL", "ATK_UP", "DRAW"],
+  ON_ATTACK: ["DAMAGE", "HEAL", "ATK_UP"],
+  PASSIVE: ["ATK_UP", "SHIELD"],
+  ON_DESTROY: ["DAMAGE", "HEAL", "DRAW"]
+};
+
+function skillOf(card) {
+  const trigger = String(card.skillTrigger || "NONE");
+  const effect = String(card.skillEffect || "NONE");
+  const value = Number(card.skillValue);
+
+  if (
+    !SKILL_ALLOWED[trigger]?.includes(effect) ||
+    !Number.isSafeInteger(value) ||
+    value < 1 ||
+    value > 99999
+  ) {
+    return null;
+  }
+
+  return { trigger, effect, value };
+}
+
+function otherSide(side) {
+  return side === "player" ? "enemy" : "player";
+}
+
+function effectiveAttack(unit) {
+  const skill = skillOf(unit);
+
+  const passive =
+    skill?.trigger === "PASSIVE" &&
+    skill.effect === "ATK_UP"
+      ? skill.value
+      : 0;
+
+  return Math.max(
+    0,
+    unit.attackValue +
+    passive +
+    (unit.skillAttackBonus || 0)
+  );
+}
+
+function dealUnitDamage(side, target, amount, source) {
+  const skill = skillOf(target);
+
+  const shield =
+    skill?.trigger === "PASSIVE" &&
+    skill.effect === "SHIELD"
+      ? skill.value
+      : 0;
+
+  const damage = Math.max(0, amount - shield);
+
+  target.currentHp = Math.max(
+    0,
+    target.currentHp - damage
+  );
+
+  addLog(
+    `✦ ${source} →「${cardName(target)}」に${damage}ダメージ` +
+    (shield
+      ? `（軽減${Math.min(shield, amount)}）`
+      : ""),
+    "damage"
+  );
+
+  return damage;
+}
+
+// 破壊時能力はフィールドから除外したあと発動
+function removeDestroyedUnits() {
+  let count = 0;
+
+  while (!game.finished && count++ < 12) {
+    let found = false;
+
+    for (const side of ["player", "enemy"]) {
+      const fighter = game[side];
+
+      const index = fighter.field.findIndex(
+        unit => unit.currentHp <= 0
+      );
+
+      if (index < 0) continue;
+
+      found = true;
+
+      const [unit] = fighter.field.splice(index, 1);
+
+      addLog(
+        `「${cardName(unit)}」が破壊されました。`,
+        "destroy"
+      );
+
+      activateSkill(side, unit, "ON_DESTROY");
+      break;
+    }
+
+    if (!found) break;
+  }
+}
+
+function activateSkill(side, unit, trigger) {
+  if (!game || game.finished) return;
+
+  const skill = skillOf(unit);
+
+  if (!skill || skill.trigger !== trigger) return;
+
+  const { effect, value } = skill;
+  const opponent = otherSide(side);
+
+  const label =
+    `${side === "player" ? "あなた" : "CPU"}の` +
+    `「${cardName(unit)}」`;
+
+  // 常時能力は別関数で計算
+  if (trigger === "PASSIVE") return;
+
+  if (effect === "DAMAGE") {
+    const target = game[opponent].field[0];
+
+    if (!target) {
+      addLog(
+        `✦ ${label}のスキル：対象モンスターなし`
+      );
+      return;
+    }
+
+    dealUnitDamage(
+      opponent,
+      target,
+      value,
+      `${label}のスキル`
+    );
+
+  } else if (effect === "HEAL") {
+    const before = game[side].hp;
+
+    game[side].hp = Math.min(
+      RULES.maxHp,
+      before + value
+    );
+
+    addLog(
+      `✦ ${label}の回復スキル！ HP +${game[side].hp - before}`,
+      "summon"
+    );
+
+  } else if (effect === "ATK_UP") {
+    unit.skillAttackBonus =
+      (unit.skillAttackBonus || 0) + value;
+
+    addLog(
+      `✦ ${label}の攻撃力 +${value}！`,
+      "summon"
+    );
+
+  } else if (effect === "DRAW") {
+    addLog(
+      `✦ ${label}のドロースキル！`,
+      "summon"
+    );
+
+    drawCards(
+      side,
+      Math.min(value, RULES.maxHand)
+    );
+  }
+}
+
+
 // ========================================
 // DECK
 // ========================================
@@ -335,9 +515,21 @@ function summon(side, index) {
     "summon"
   );
 
+  
   render();
+
   summonEffect(findSlot(side, unit.instanceId));
+
+  // 召喚時スキル発動
+  activateSkill(side, unit, "ON_SUMMON");
+
+  // スキルによる破壊を処理
+  removeDestroyedUnits();
+
+  render();
+
   return true;
+
 }
 
 // ========================================
@@ -399,10 +591,30 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
   game[attackerSide].attacksUsed++;
   attacker.attacked = true;
 
-  const damage = attacker.attackValue;
+  
+  // 攻撃時スキルを発動
+  activateSkill(attackerSide, attacker, "ON_ATTACK");
 
-  // 攻撃側は反撃ダメージを受けない
-  defender.currentHp = Math.max(0, defender.currentHp - damage);
+  // スキルで対象が破壊された場合は先に処理
+  if (defender.currentHp <= 0) {
+    removeDestroyedUnits();
+    render();
+    return true;
+  }
+
+  // 常時強化・攻撃時強化・防御スキルを反映
+  const damage = dealUnitDamage(
+    defenderSide,
+    defender,
+    effectiveAttack(attacker),
+    cardName(attacker)
+  );
+
+  // 攻撃時の強化は今回限り
+  if (skillOf(attacker)?.trigger === "ON_ATTACK") {
+    attacker.skillAttackBonus = 0;
+  }
+
 
   addLog(
     `「${cardName(attacker)}」が「${cardName(defender)}」を攻撃！`,
@@ -434,16 +646,18 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
 
     await sleep(550);
 
-    const index = game[defenderSide].field.findIndex(
-      u => u.instanceId === defenderId
-    );
+    
+    // 破壊時スキルと連鎖破壊を処理
+    removeDestroyedUnits();
 
-    if (index !== -1) game[defenderSide].field.splice(index, 1);
   }
 
+  
+  removeDestroyedUnits();
   render();
   return true;
 }
+
 
 async function attackHero(attackerSide, attackerId) {
   if (!game || game.finished) return false;
@@ -474,12 +688,34 @@ async function attackHero(attackerSide, attackerId) {
     defenderSide === "enemy" ? ".fighter.enemy" : ".fighter.player"
   );
 
+  
+  // 攻撃時スキル発動
+  activateSkill(attackerSide, attacker, "ON_ATTACK");
+
+  // スキルによる破壊を処理
+  removeDestroyedUnits();
+
+  if (game.finished) {
+    render();
+    return true;
+  }
+
+  // 攻撃力を計算
+  const damage = effectiveAttack(attacker);
+
+  // 一時的な攻撃力強化を解除
+  if (skillOf(attacker)?.trigger === "ON_ATTACK") {
+    attacker.skillAttackBonus = 0;
+  }
+
   impactEffect(hero);
-  floatingDamage(hero, attacker.attackValue);
+  floatingDamage(hero, damage);
   screenShake();
 
-  applyHeroDamage(defenderSide, attacker.attackValue);
+  applyHeroDamage(defenderSide, damage);
+
   render();
+
 
   await sleep(500);
   return true;
@@ -772,7 +1008,7 @@ function renderSlots(side) {
     stats.className = "stats";
 
     const atk = document.createElement("span");
-    atk.textContent = `⚔${unit.attackValue}`;
+    atk.textContent = `⚔${effectiveAttack(unit)}`;
 
     const hp = document.createElement("span");
     hp.textContent = `♥${unit.currentHp}`;
