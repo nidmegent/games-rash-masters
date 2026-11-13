@@ -590,7 +590,7 @@ const skillPreview =
 const SKILL_EFFECTS = {
   NONE: "効果なし",
   DAMAGE: "相手モンスターにダメージ",
-  HEAL: "自分のプレイヤーHP回復",
+  HEAL: "自身のカードHP回復",
   ATK_UP: "攻撃力アップ",
   SHIELD: "受けるダメージ軽減",
   DRAW: "カードをドロー"
@@ -627,7 +627,7 @@ function updateSkillEditor() {
     } else if (trigger === "ON_ATTACK") {
       allowed = ["NONE", "DAMAGE", "HEAL", "ATK_UP"].includes(effect);
     } else if (trigger === "ON_DESTROY") {
-      allowed = ["NONE", "DAMAGE", "HEAL", "DRAW"].includes(effect);
+  allowed = ["NONE", "DAMAGE", "DRAW"].includes(effect);
     } else if (trigger === "ON_SUMMON") {
       allowed = ["NONE", "DAMAGE", "HEAL", "ATK_UP", "DRAW"].includes(effect);
     }
