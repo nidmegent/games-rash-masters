@@ -1053,8 +1053,8 @@ async function initialize(user) {
 
     player: {
       hp: RULES.maxHp,
-      mana: 1,
-      maxMana: 1,
+      mana: 2,
+      maxMana: 2,
       summons: 0,
       attacksUsed: 0,
       turnsPlayed: 0,
@@ -1065,8 +1065,8 @@ async function initialize(user) {
 
     enemy: {
       hp: RULES.maxHp,
-      mana: 1,
-      maxMana: 1,
+      mana: 2,
+      maxMana: 2,
       summons: 0,
       attacksUsed: 0,
       turnsPlayed: 0,
