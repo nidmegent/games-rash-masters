@@ -1504,3 +1504,54 @@ body::before {
     transform: translate(-50%, -35px) scale(1);
   }
 }
+
+
+/* ========================================
+   SKILL VFX - LAYER FIX
+======================================== */
+
+#effectLayer {
+  pointer-events: none;
+}
+
+#effectLayer .skill-vfx {
+  z-index: 9999;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: skillLayerFlash 1.1s ease-out forwards;
+}
+
+#effectLayer .skill-vfx-text {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 900;
+  text-shadow: 0 2px 8px #000;
+  animation: skillTextRise 1.1s ease-out forwards;
+}
+
+@keyframes skillLayerFlash {
+  0% {
+    opacity: 0;
+    scale: .85;
+  }
+
+  20% {
+    opacity: 1;
+    scale: 1.08;
+  }
+
+  60% {
+    opacity: 1;
+    scale: 1;
+  }
+
+  100% {
+    opacity: 0;
+    scale: 1.12;
+  }
+}
