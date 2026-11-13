@@ -540,3 +540,158 @@ $("logoutButton").addEventListener("click", async () => {
     showMessage("ログアウトに失敗しました。", "error");
   }
 });
+
+
+// ========================================
+// RASH MASTERS SKILL EDITOR VER.1
+// ========================================
+
+const skillTriggerInput =
+  document.getElementById("skillTrigger");
+
+const skillEffectInput =
+  document.getElementById("skillEffect");
+
+const skillValueInput =
+  document.getElementById("skillValue");
+
+const skillPreview =
+  document.getElementById("skillPreview");
+
+const SKILL_EFFECTS = {
+  NONE: "効果なし",
+  DAMAGE: "相手モンスターにダメージ",
+  HEAL: "自分のプレイヤーHP回復",
+  ATK_UP: "攻撃力アップ",
+  SHIELD: "受けるダメージ軽減",
+  DRAW: "カードをドロー"
+};
+
+const SKILL_TRIGGERS = {
+  NONE: "なし",
+  ON_SUMMON: "召喚時",
+  ON_ATTACK: "攻撃時",
+  PASSIVE: "常時",
+  ON_DESTROY: "破壊時"
+};
+
+function updateSkillEditor() {
+  const trigger = skillTriggerInput.value;
+  const enabled = trigger !== "NONE";
+
+  skillEffectInput.disabled = !enabled;
+  skillValueInput.disabled = !enabled;
+
+  if (!enabled) {
+    skillEffectInput.value = "NONE";
+    skillValueInput.value = "0";
+  }
+
+  // 発動タイミングと効果の組み合わせを制限
+  for (const option of skillEffectInput.options) {
+    const effect = option.value;
+
+    let allowed = true;
+
+    if (trigger === "PASSIVE") {
+      allowed = ["NONE", "ATK_UP", "SHIELD"].includes(effect);
+    } else if (trigger === "ON_ATTACK") {
+      allowed = ["NONE", "DAMAGE", "HEAL", "ATK_UP"].includes(effect);
+    } else if (trigger === "ON_DESTROY") {
+      allowed = ["NONE", "DAMAGE", "HEAL", "DRAW"].includes(effect);
+    } else if (trigger === "ON_SUMMON") {
+      allowed = ["NONE", "DAMAGE", "HEAL", "ATK_UP", "DRAW"].includes(effect);
+    }
+
+    option.disabled = !allowed;
+  }
+
+  if (skillEffectInput.selectedOptions[0]?.disabled) {
+    skillEffectInput.value = "NONE";
+  }
+
+  const effect = skillEffectInput.value;
+  const value = Number(skillValueInput.value) || 0;
+
+  if (!enabled || effect === "NONE") {
+    skillPreview.textContent =
+      "このカードにはスキルが設定されていません。";
+    return;
+  }
+
+  const unit = effect === "DRAW" ? "枚" : "";
+
+  skillPreview.textContent =
+    `【${SKILL_TRIGGERS[trigger]}】` +
+    `${SKILL_EFFECTS[effect]}：${value}${unit}`;
+}
+
+function getSkillData() {
+  const trigger = skillTriggerInput.value;
+  const effect = skillEffectInput.value;
+  const value = Number(skillValueInput.value);
+
+  if (trigger === "NONE") {
+    return {
+      skillTrigger: "NONE",
+      skillEffect: "NONE",
+      skillValue: 0
+    };
+  }
+
+  if (effect === "NONE") {
+    throw new Error("スキル効果を選択してください。");
+  }
+
+  if (
+    !Number.isSafeInteger(value) ||
+    value <= 0 ||
+    value > 99999
+  ) {
+    throw new Error("スキル効果量は1～99999の整数で入力してください。");
+  }
+
+  if (skillEffectInput.selectedOptions[0]?.disabled) {
+    throw new Error("この発動タイミングでは使用できない効果です。");
+  }
+
+  return {
+    skillTrigger: trigger,
+    skillEffect: effect,
+    skillValue: value
+  };
+}
+
+function loadSkillData(card) {
+  skillTriggerInput.value =
+    card.skillTrigger || "NONE";
+
+  skillEffectInput.value =
+    card.skillEffect || "NONE";
+
+  skillValueInput.value =
+    card.skillValue ?? 0;
+
+  updateSkillEditor();
+}
+
+function resetSkillData() {
+  loadSkillData({});
+}
+
+skillTriggerInput.addEventListener(
+  "change",
+  updateSkillEditor
+);
+
+skillEffectInput.addEventListener(
+  "change",
+  updateSkillEditor
+);
+
+skillValueInput.addEventListener(
+  "input",
+  updateSkillEditor
+);
+
+updateSkillEditor();
