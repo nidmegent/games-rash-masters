@@ -38,8 +38,8 @@
           <h2>SHADOW CHALLENGER</h2>
         </div>
         <div class="hp-value">
-          <strong id="enemyHp">10000</strong>
-          <small>/ 10000 HP</small>
+          <strong id="enemyHp">3000</strong>
+          <small>/ 3000 HP</small>
         </div>
       </div>
 
@@ -50,7 +50,7 @@
       <div class="fighter-meta">
         <span>HAND <b id="enemyHandCount">5</b></span>
         <span>DECK <b id="enemyDeckCount">5</b></span>
-        <span>MANA <b id="enemyMana">1</b></span>
+        <span>MANA <b id="enemyMana">2</b></span>
       </div>
     </section>
 
@@ -99,8 +99,8 @@
           <h2>RASH MASTER</h2>
         </div>
         <div class="hp-value">
-          <strong id="playerHp">10000</strong>
-          <small>/ 10000 HP</small>
+          <strong id="playerHp">3000</strong>
+          <small>/ 3000 HP</small>
         </div>
       </div>
 
@@ -109,7 +109,7 @@
       </div>
 
       <div class="fighter-meta">
-        <span>MANA <b id="playerMana">1</b> / <b id="playerMaxMana">1</b></span>
+        <span>MANA <b id="playerMana">2</b> / <b id="playerMaxMana">2</b></span>
         <span>DECK <b id="playerDeckCount">5</b></span>
         <span>SUMMON <b id="summonCount">0</b> / 2</span>
       </div>
@@ -127,9 +127,12 @@
       <div id="playerHand" class="hand"></div>
     </section>
 
-    <section class="action-panel">
-  <div id="battleMessage" class="battle-message"
-       role="status" aria-live="polite">
+
+<section class="action-panel">
+  <div id="battleMessage"
+       class="battle-message"
+       role="status"
+       aria-live="polite">
     カードを召喚して戦おう！
   </div>
 
@@ -137,11 +140,19 @@
     <button id="attackButton" type="button">
       ⚔ 攻撃フェーズ
     </button>
+
     <button id="endTurnButton" type="button">
       ターン終了
     </button>
+
+    <button id="surrenderButton"
+            type="button"
+            class="surrender-button">
+      降参
+    </button>
   </div>
 </section>
+
 
   </div>
 
@@ -176,6 +187,39 @@
     <a href="battle.html">対戦準備画面へ戻る</a>
   </div>
 </div>
+
+
+<!-- 降参確認モーダル -->
+<div id="surrenderOverlay"
+     class="surrender-overlay hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="surrenderTitle">
+
+  <div class="surrender-box">
+    <span class="eyebrow">SURRENDER</span>
+
+    <h2 id="surrenderTitle">本当に降参しますか？</h2>
+
+    <p>
+      降参すると、このバトルは敗北になります。<br>
+      この操作は取り消せません。
+    </p>
+
+    <div class="surrender-actions">
+      <button id="cancelSurrender"
+              type="button">
+        キャンセル
+      </button>
+
+      <button id="confirmSurrender"
+              type="button">
+        降参を確定
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <script type="module" src="js/arena.js?v=2.1"></script>
 </body>
