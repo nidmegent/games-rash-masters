@@ -1060,3 +1060,108 @@ h1 span {
     animation: none;
   }
 }
+
+
+/* ========================================
+   MOBILE DECK BUILDER UPDATE
+======================================== */
+
+@media (max-width: 600px) {
+
+  .container {
+    width: 95%;
+    margin-top: 22px;
+  }
+
+  .page-heading {
+    margin-bottom: 20px;
+  }
+
+  .page-heading h1 {
+    font-size: 28px;
+  }
+
+  .builder-layout {
+    gap: 14px;
+  }
+
+  /* カード一覧 */
+  .collection-list {
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: 1fr;
+  }
+
+  .collection-card {
+    min-height: 115px;
+    padding: 10px;
+  }
+
+  .collection-card img {
+    width: 76px;
+    height: 104px;
+  }
+
+  .collection-info strong {
+    font-size: 12px;
+  }
+
+  /* デッキ一覧 */
+  .deck-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .deck-card-row {
+    min-height: 72px;
+  }
+
+  /* フィルタ */
+  .filter-row {
+    gap: 6px;
+  }
+
+  .filter-button {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 5px;
+  }
+
+  /* 並び替え */
+  .sort-row {
+    flex-wrap: wrap;
+  }
+
+  .sort-row select {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* 保存ボタン */
+  .save-button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  /* カード詳細 */
+  .card-detail-modal {
+    padding: 12px;
+  }
+
+  .card-detail-box {
+    max-height: 92dvh;
+    padding: 45px 16px 20px;
+  }
+
+  .card-detail-image img {
+    max-height: 240px;
+  }
+
+  .detail-stats {
+    gap: 6px;
+  }
+
+  .detail-stats strong {
+    font-size: 17px;
+  }
+}
