@@ -1031,6 +1031,67 @@ function beginBattlePhase() {
   }
 }
 
+
+/* ========================================
+   自動フェーズ移行・自動ターン終了
+======================================== */
+
+let autoActionTimer = null;
+
+function checkAutoAction() {
+  if (
+    !game ||
+    game.finished ||
+    busy ||
+    game.active !== "player" ||
+    game.phase !== "MAIN"
+  ) return;
+
+  const fighter = game.player;
+
+  // まだ召喚できるカードがあるか
+  const canSummonAny = fighter.hand.some(
+    (card, index) => canSummon("player", index)
+  );
+
+  // 召喚できるなら待機
+  if (canSummonAny) return;
+
+  clearTimeout(autoActionTimer);
+
+  const token = turnToken;
+
+  autoActionTimer = setTimeout(() => {
+    if (
+      !game ||
+      game.finished ||
+      busy ||
+      game.active !== "player" ||
+      game.phase !== "MAIN" ||
+      turnToken !== token
+    ) return;
+
+    // 状態が変わっていないか再確認
+    const canStillSummon = game.player.hand.some(
+      (card, index) => canSummon("player", index)
+    );
+
+    if (canStillSummon) return;
+
+    // 攻撃できるカードがあれば攻撃フェーズへ
+    if (game.player.field.some(
+      unit => !unit.attacked &&
+              !unit.summonedThisTurn &&
+              unit.currentHp > 0
+    ) && game.player.attacksUsed < RULES.maxAttacks) {
+      beginBattlePhase();
+    } else {
+      // 攻撃できなくても、攻撃フェーズを経由して終了
+      beginBattlePhase();
+    }
+  }, 700);
+}
+
 function scheduleAutoEnd() {
   if (
     !game || game.finished ||
