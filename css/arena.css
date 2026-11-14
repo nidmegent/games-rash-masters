@@ -2199,3 +2199,60 @@ body::before {
     transform: translateY(-35px) scale(1);
   }
 }
+
+
+/* ========================================
+   SHIELD CUT-IN POSITION FIX
+======================================== */
+
+/* スキルカットイン共通 */
+#effectLayer .skill-cutin {
+  position: fixed;
+  z-index: 95;
+
+  width: min(440px, 88vw);
+  min-height: 100px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  transform: translate(-50%, -50%);
+  animation: skillCutinLocal .95s ease-in-out forwards;
+
+  pointer-events: none;
+}
+
+/* 自分側 */
+#effectLayer .skill-cutin-player {
+  border: 2px solid #62e7ff;
+  background: linear-gradient(
+    100deg, #071927, #164566, #071927
+  );
+  box-shadow: 0 0 30px #62e7ff88;
+}
+
+/* CPU側 */
+#effectLayer .skill-cutin-enemy {
+  border: 2px solid #ff667d;
+  background: linear-gradient(
+    100deg, #260c18, #68233c, #260c18
+  );
+  box-shadow: 0 0 30px #ff667d88;
+}
+
+/* 防衛スキルだけ青い強調表示 */
+#effectLayer .skill-cutin:has(
+  .skill-cutin-info
+) {
+  border-radius: 12px;
+}
+
+@media (max-width: 650px) {
+  #effectLayer .skill-cutin {
+    width: min(310px, 85vw);
+    min-height: 85px;
+    padding: 8px 12px;
+    gap: 10px;
+  }
+}
