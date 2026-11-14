@@ -205,7 +205,7 @@ function showSkillEffect(side, unitId, type, amount = 0) {
   const effects = {
     HEAL: ["skill-heal", `+${amount} HP`],
     ATK_UP: ["skill-atk", `+${amount} ATK`],
-    SHIELD: ["skill-shield", `🛡 -${amount}`],
+    SHIELD: ["skill-shield", `🛡 DAMAGE -${amount}`],
     DAMAGE: ["skill-damage", `-${amount}`],
     DRAW: ["skill-draw", `DRAW +${amount}`]
   };
