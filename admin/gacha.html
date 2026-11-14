@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GACHA ADMIN | RASH MASTERS</title>
+  <link rel="stylesheet" href="../css/gacha-admin.css">
+</head>
+<body>
+  <header class="header">
+    <a href="../home.html" class="logo">RASH <span>MASTERS</span></a>
+    <a href="../home.html" class="back">HOME</a>
+  </header>
+
+  <main id="loading">管理者権限を確認しています...</main>
+
+  <main id="adminContent" class="container" hidden>
+    <p class="eyebrow">RASH MASTERS / ADMINISTRATION</p>
+    <h1>GACHA <span>MANAGEMENT</span></h1>
+    <p class="subtitle">ガチャの作成・排出設定・公開管理</p>
+
+    <section class="panel">
+      <h2>REGISTERED GACHAS</h2>
+      <div id="gachaList"></div>
+      <button id="newGacha" class="secondary">＋ NEW GACHA</button>
+    </section>
+
+    <section class="panel">
+      <h2>GACHA SETTINGS</h2>
+
+      <form id="gachaForm">
+        <label>ガチャ名
+          <input id="gachaName" maxlength="60" required
+                 placeholder="例：レジェンドガチャ">
+        </label>
+
+        <label>説明
+          <textarea id="gachaDescription" maxlength="500"
+                    placeholder="ガチャの説明"></textarea>
+        </label>
+
+        <div class="fields">
+          <label>1回の必要コイン
+            <input id="singleCost" type="number" min="0"
+                   max="100000000" step="1" value="100" required>
+          </label>
+          <label>10連の必要コイン
+            <input id="tenCost" type="number" min="0"
+                   max="100000000" step="1" value="1000" required>
+          </label>
+        </div>
+
+        <h3>RARITY RATES</h3>
+        <div id="rates"></div>
+        <p id="rateTotal">合計 100%</p>
+
+        <h3>CARD POOL</h3>
+        <p class="hint">排出対象にするカードを選択してください。</p>
+        <div id="cardPool">カードを読み込み中...</div>
+
+        <h3>PUBLICATION</h3>
+        <label class="check">
+          <input id="enabled" type="checkbox">
+          プレイヤーに公開する
+        </label>
+
+        <div class="actions">
+          <button id="saveGacha" type="submit">SAVE SETTINGS</button>
+          <button id="deleteGacha" type="button"
+                  class="danger" disabled>DELETE GACHA</button>
+        </div>
+      </form>
+    </section>
+
+    <p id="message" role="status" aria-live="polite"></p>
+  </main>
+
+  <script type="module" src="../js/gacha-admin.js"></script>
+</body>
+</html>
