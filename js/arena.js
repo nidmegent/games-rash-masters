@@ -659,7 +659,7 @@ if (
     ) {
       beginBattlePhase();
     }
-  }, 700);
+  }, 300);
 }
 
 if (side === "player") {
@@ -1099,7 +1099,7 @@ function checkAutoAction() {
       // 攻撃できなくても、攻撃フェーズを経由して終了
       beginBattlePhase();
     }
-  }, 700);
+  }, 300);
 }
 
 function scheduleAutoEnd() {
@@ -1127,7 +1127,7 @@ function scheduleAutoEnd() {
     ) {
       endPlayerTurn();
     }
-  }, 900);
+  }, 300);
 }
 
 async function endPlayerTurn() {
