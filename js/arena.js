@@ -336,8 +336,6 @@ if (reduced > 0) {
     effect: "SHIELD",
     value: reduced
   });
-
-  playBattleSound("shield");
 }
 
   addLog(
