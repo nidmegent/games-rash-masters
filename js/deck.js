@@ -311,6 +311,8 @@ filtered.sort((a, b) => {
     const quantity = getDeckQuantity(card.id);
 
 const article = document.createElement("article");
+
+article.dataset.cardId = card.id;
 article.className = "collection-card";
 
 const cardRarityClass = String(card.rarity || "N").toUpperCase();
@@ -416,7 +418,10 @@ function changeCardQuantity(cardId, change) {
     deckContents.set(cardId, next);
   }
 
-  renderAll();
+  
+renderAll();
+animateChangedCard(cardId, change);
+
 }
 
 // ==============================
@@ -443,6 +448,7 @@ function renderDeckList() {
   entries.forEach(({ card, cardId, quantity }) => {
     
 const row = document.createElement("div");
+row.dataset.cardId = cardId;
 row.className = "deck-card-row";
 
 const cardRarityClass = String(card.rarity || "N").toUpperCase();
@@ -1019,5 +1025,34 @@ function renderDeckManaAnalysis() {
     track.append(fill);
     row.append(label, track, count);
     container.append(row);
+  });
+}
+
+
+// ========================================
+// DECK CARD CHANGE ANIMATION
+// ========================================
+
+function animateChangedCard(cardId, change) {
+  const cardElements = document.querySelectorAll(
+    ".collection-card, .deck-card-row"
+  );
+
+  cardElements.forEach(element => {
+    if (element.dataset.cardId !== cardId) return;
+
+    const animationClass =
+      change > 0 ? "card-added" : "card-removed";
+
+    element.classList.remove("card-added", "card-removed");
+
+    // アニメーションを再実行
+    void element.offsetWidth;
+
+    element.classList.add(animationClass);
+
+    element.addEventListener("animationend", () => {
+      element.classList.remove(animationClass);
+    }, { once: true });
   });
 }
