@@ -836,3 +836,183 @@ h1 span {
   border-radius: inherit;
   transition: width .25s ease;
 }
+
+
+/* ========================================
+   RASH MASTERS - DECK VISUAL UPDATE
+======================================== */
+
+/* レアリティ別カラー */
+.card-glow-N {
+  --card-glow: #c0c5d1;
+}
+
+.card-glow-R {
+  --card-glow: #58a9ff;
+}
+
+.card-glow-SR {
+  --card-glow: #bb83ff;
+}
+
+.card-glow-SSR {
+  --card-glow: #ffbd62;
+}
+
+.card-glow-UR {
+  --card-glow: #ff6ee5;
+}
+
+/* カード共通 */
+.collection-card,
+.deck-card-row {
+  position: relative;
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background .2s ease;
+}
+
+/* レアリティごとの細いアクセント */
+.collection-card[class*="card-glow-"],
+.deck-card-row[class*="card-glow-"] {
+  border-left: 3px solid var(--card-glow);
+}
+
+/* ホバー演出 */
+@media (hover: hover) {
+  .collection-card:hover,
+  .deck-card-row:hover {
+    transform: translateY(-3px);
+    border-color: var(--card-glow);
+    background: rgba(27, 32, 52, .9);
+    box-shadow:
+      0 0 18px color-mix(
+        in srgb,
+        var(--card-glow) 25%,
+        transparent
+      ),
+      0 10px 22px rgba(0, 0, 0, .25);
+  }
+
+  .collection-card img,
+  .deck-card-row img {
+    transition:
+      transform .2s ease,
+      filter .2s ease;
+  }
+
+  .collection-card:hover img,
+  .deck-card-row:hover img {
+    transform: scale(1.05);
+    filter: drop-shadow(
+      0 0 10px var(--card-glow)
+    );
+  }
+}
+
+/* URの特別な発光 */
+.card-glow-UR {
+  box-shadow:
+    inset 0 0 12px rgba(255, 110, 229, .06);
+}
+
+/* SSRの特別な発光 */
+.card-glow-SSR {
+  box-shadow:
+    inset 0 0 12px rgba(255, 189, 98, .06);
+}
+
+/* ボタン操作 */
+.card-actions button,
+.deck-card-quantity button {
+  transition:
+    transform .15s ease,
+    border-color .15s ease,
+    background .15s ease;
+}
+
+.card-actions button:not(:disabled):active,
+.deck-card-quantity button:not(:disabled):active {
+  transform: scale(.88);
+}
+
+.card-actions button:not(:disabled):hover,
+.deck-card-quantity button:not(:disabled):hover {
+  border-color: var(--cyan);
+  background: rgba(84, 230, 255, .14);
+}
+
+/* デッキ完成時 */
+.deck-status-complete {
+  border-color: rgba(84, 230, 255, .65);
+  box-shadow:
+    0 0 30px rgba(84, 230, 255, .12),
+    inset 0 0 18px rgba(84, 230, 255, .04);
+  transition:
+    border-color .3s ease,
+    box-shadow .3s ease;
+}
+
+.deck-progress-complete {
+  background: linear-gradient(
+    90deg,
+    #9b83ff,
+    #54e6ff,
+    #9b83ff
+  );
+  background-size: 200% 100%;
+  animation: deckCompleteGlow 2s linear infinite;
+}
+
+@keyframes deckCompleteGlow {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* スマホでの押しやすさ */
+@media (max-width: 520px) {
+  .card-actions button,
+  .deck-card-quantity button {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  .collection-card {
+    gap: 12px;
+  }
+
+  .collection-card img {
+    width: 76px;
+    height: 105px;
+  }
+
+  .deck-card-row {
+    gap: 8px;
+  }
+
+  .deck-card-row img {
+    width: 46px;
+    height: 63px;
+  }
+}
+
+/* 動きを減らす設定への対応 */
+@media (prefers-reduced-motion: reduce) {
+  .collection-card,
+  .deck-card-row,
+  .collection-card img,
+  .deck-card-row img,
+  .deck-progress-complete {
+    animation: none;
+    transition: none;
+  }
+}
