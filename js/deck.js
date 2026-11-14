@@ -230,15 +230,42 @@ function renderCollection() {
   const keyword = $("cardSearch").value.trim().toLowerCase();
 
   const filtered = ownedCards.filter((card) => {
-    const name = String(card.name || "").toLowerCase();
+  const name = String(card.name || "").toLowerCase();
 
-    const matchesName = name.includes(keyword);
-    const matchesRarity =
-      activeRarity === "ALL" || card.rarity === activeRarity;
+  const matchesName = name.includes(keyword);
+  const matchesRarity =
+    activeRarity === "ALL" || card.rarity === activeRarity;
 
-    return matchesName && matchesRarity;
-  });
+  return matchesName && matchesRarity;
+});
 
+const sortType = $("cardSort").value;
+const rarityOrder = ["UR", "SSR", "SR", "R", "N"];
+
+const numberValue = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+filtered.sort((a, b) => {
+  switch (sortType) {
+    case "cost-asc":
+      return numberValue(a.cost) - numberValue(b.cost);
+
+    case "cost-desc":
+      return numberValue(b.cost) - numberValue(a.cost);
+
+    case "attack-desc":
+      return numberValue(b.atk) - numberValue(a.atk);
+
+    case "hp-desc":
+      return numberValue(b.hp) - numberValue(a.hp);
+
+    default:
+      return rarityOrder.indexOf(a.rarity) -
+        rarityOrder.indexOf(b.rarity);
+  }
+});
   const list = $("collectionList");
   list.innerHTML = "";
 
@@ -737,3 +764,6 @@ function showMessage(message, type = "success") {
     element.classList.add("hidden");
   }, 3500);
 }
+
+// カード並び替え
+$("cardSort").addEventListener("change", renderCollection);
