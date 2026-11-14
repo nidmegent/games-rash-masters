@@ -1016,3 +1016,47 @@ h1 span {
     transition: none;
   }
 }
+
+
+/* ========================================
+   CARD ADD / REMOVE ANIMATION
+======================================== */
+
+.card-added {
+  animation: cardAddedFlash .45s ease-out;
+}
+
+.card-removed {
+  animation: cardRemovedFlash .45s ease-out;
+}
+
+@keyframes cardAddedFlash {
+  0% {
+    background: rgba(84, 230, 255, .35);
+    box-shadow: 0 0 24px rgba(84, 230, 255, .65);
+  }
+
+  100% {
+    background: rgba(8, 10, 18, .55);
+    box-shadow: none;
+  }
+}
+
+@keyframes cardRemovedFlash {
+  0% {
+    background: rgba(255, 100, 124, .3);
+    box-shadow: 0 0 24px rgba(255, 100, 124, .55);
+  }
+
+  100% {
+    background: rgba(8, 10, 18, .55);
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-added,
+  .card-removed {
+    animation: none;
+  }
+}
