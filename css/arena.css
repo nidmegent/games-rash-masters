@@ -2256,3 +2256,12 @@ body::before {
     gap: 10px;
   }
 }
+
+/* ========================================
+   PLAYER HP BAR POSITION ADJUST
+   自分のHPバーを少し上へ
+======================================== */
+
+.fighter.player {
+  transform: translateY(-10px);
+}
