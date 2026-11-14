@@ -329,15 +329,18 @@ function dealUnitDamage(side, target, amount, source) {
     target.currentHp - damage
   );
 
-  if (reduced > 0) {
-    showSkillEffect(
-      side,
-      target.instanceId,
-      "SHIELD",
-      reduced
-      playBattleSound("shield");
-    );
-  }
+  
+if (reduced > 0) {
+  showSkillEffect(
+    side,
+    target.instanceId,
+    "SHIELD",
+    reduced
+  );
+
+  playBattleSound("shield");
+}
+
 
   addLog(
     `✦ ${source} →「${cardName(target)}」に${damage}ダメージ` +
