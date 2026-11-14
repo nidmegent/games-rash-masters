@@ -220,6 +220,7 @@ function renderAll() {
   renderCollection();
   renderDeckList();
   renderDeckStatus();
+  renderDeckRaritySummary();
 }
 
 // ==============================
@@ -841,3 +842,64 @@ document.addEventListener("keydown", (event) => {
     closeCardDetail();
   }
 });
+
+
+// ==============================
+// DECK RARITY SUMMARY
+// ==============================
+
+function renderDeckRaritySummary() {
+  const container = $("deckRaritySummary");
+  if (!container) return;
+
+  const rarities = ["UR", "SSR", "SR", "R", "N"];
+
+  const colors = {
+    UR: "#ff6ee5",
+    SSR: "#ffbd62",
+    SR: "#bb83ff",
+    R: "#58a9ff",
+    N: "#c0c5d1"
+  };
+
+  const counts = Object.fromEntries(
+    rarities.map(rarity => [rarity, 0])
+  );
+
+  deckContents.forEach((quantity, cardId) => {
+    const card = ownedCards.find(item => item.id === cardId);
+    if (card && Object.hasOwn(counts, card.rarity)) {
+      counts[card.rarity] += quantity;
+    }
+  });
+
+  container.innerHTML = "";
+
+  rarities.forEach(rarity => {
+    const count = counts[rarity];
+    const percent = Math.min((count / DECK_SIZE) * 100, 100);
+
+    const row = document.createElement("div");
+    row.className = "rarity-summary-item";
+
+    const label = document.createElement("span");
+    label.textContent = rarity;
+    label.style.color = colors[rarity];
+
+    const track = document.createElement("div");
+    track.className = "rarity-summary-track";
+
+    const fill = document.createElement("div");
+    fill.className = "rarity-summary-fill";
+    fill.style.width = `${percent}%`;
+    fill.style.background = colors[rarity];
+
+    const value = document.createElement("span");
+    value.className = "rarity-summary-count";
+    value.textContent = `${count}枚`;
+
+    track.appendChild(fill);
+    row.append(label, track, value);
+    container.appendChild(row);
+  });
+}
