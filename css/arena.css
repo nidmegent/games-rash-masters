@@ -2263,5 +2263,5 @@ body::before {
 ======================================== */
 
 .fighter.player {
-  transform: translateY(-10px);
+  transform: translateY(-20px);
 }
