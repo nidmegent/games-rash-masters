@@ -1591,6 +1591,263 @@ async function initialize(user) {
   render();
 }
 
+
+/* ========================================
+   RASH MASTERS - VISUAL UPDATE 2.3
+   Summon / Skill / Card Detail
+======================================== */
+
+function cardRarity(card) {
+  const path = String(card.imagePath || "");
+  const match = path.match(/assets\/cards\/(UR|SSR|SR|R|N)\//i);
+  const raw = String(card.rarity || match?.[1] || "N").toUpperCase();
+  return ["N", "R", "SR", "SSR", "UR"].includes(raw)
+    ? raw : "N";
+}
+
+const SKILL_NAMES = {
+  DAMAGE: "スキルダメージ",
+  HEAL: "自己回復",
+  ATK_UP: "攻撃力強化",
+  DRAW: "カードドロー",
+  SHIELD: "シールド"
+};
+
+const TRIGGER_NAMES = {
+  ON_SUMMON: "召喚時",
+  ON_ATTACK: "攻撃時",
+  PASSIVE: "常時発動",
+  ON_DESTROY: "破壊時"
+};
+
+// レアリティ別召喚演出
+function showRaritySummon(side, unit) {
+  const target = findSlot(side, unit.instanceId);
+  if (!target) return;
+
+  const rarity = cardRarity(unit);
+  const rect = target.getBoundingClientRect();
+
+  const effect = document.createElement("div");
+  effect.className =
+    `rarity-summon rarity-${rarity.toLowerCase()}`;
+
+  effect.style.left = `${rect.left + rect.width / 2}px`;
+  effect.style.top = `${rect.top + rect.height / 2}px`;
+
+  const label = document.createElement("span");
+  label.textContent = `${rarity} SUMMON`;
+
+  effect.append(label);
+  document.body.append(effect);
+
+  setTimeout(() => effect.remove(), 1100);
+}
+
+// スキル発動カットイン
+function showSkillCutin(unit, skill) {
+  if (!skill || skill.trigger === "PASSIVE") return;
+
+  const layer = document.createElement("div");
+  layer.className = "skill-cutin";
+
+  const image = createCardImage(unit);
+  image.className = "skill-cutin-image";
+
+  const info = document.createElement("div");
+  info.className = "skill-cutin-info";
+
+  const trigger = document.createElement("small");
+  trigger.textContent =
+    TRIGGER_NAMES[skill.trigger] || "SKILL";
+
+  const title = document.createElement("strong");
+  title.textContent =
+    SKILL_NAMES[skill.effect] || skill.effect;
+
+  const name = document.createElement("span");
+  name.textContent = cardName(unit);
+
+  info.append(trigger, title, name);
+  layer.append(image, info);
+  document.body.append(layer);
+
+  setTimeout(() => layer.remove(), 950);
+}
+
+// カード詳細画面
+let cardDetailOpen = false;
+
+function closeCardDetail() {
+  document.getElementById("cardDetailOverlay")?.remove();
+  cardDetailOpen = false;
+}
+
+function openCardDetail(card) {
+  if (!card) return;
+
+  closeCardDetail();
+  cardDetailOpen = true;
+
+  const overlay = document.createElement("div");
+  overlay.id = "cardDetailOverlay";
+  overlay.className = "card-detail-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "カード詳細");
+
+  const panel = document.createElement("div");
+  panel.className = "card-detail-panel";
+
+  const close = document.createElement("button");
+  close.className = "card-detail-close";
+  close.type = "button";
+  close.textContent = "×";
+  close.addEventListener("click", closeCardDetail);
+
+  const rarity = document.createElement("div");
+  rarity.className =
+    `card-detail-rarity rarity-text-${cardRarity(card).toLowerCase()}`;
+  rarity.textContent = cardRarity(card);
+
+  const image = createCardImage(card);
+  image.className = "card-detail-image";
+
+  const name = document.createElement("h2");
+  name.textContent = cardName(card);
+
+  const stats = document.createElement("div");
+  stats.className = "card-detail-stats";
+
+  const atk = card.instanceId
+    ? effectiveAttack(card)
+    : cardAttack(card);
+
+  const hp = card.instanceId
+    ? `${card.currentHp} / ${card.maxHp}`
+    : String(cardHp(card));
+
+  stats.textContent =
+    `MANA ${cardCost(card)}  |  ATK ${atk}  |  HP ${hp}`;
+
+  const skill = skillOf(card);
+  const skillText = document.createElement("div");
+  skillText.className = "card-detail-skill";
+
+  skillText.textContent = skill
+    ? `${TRIGGER_NAMES[skill.trigger]}：` +
+      `${SKILL_NAMES[skill.effect]} +${skill.value}`
+    : "スキルなし";
+
+  const description = document.createElement("p");
+  description.className = "card-detail-description";
+  description.textContent = String(
+    card.description || card.flavorText || ""
+  );
+
+  panel.append(
+    close, rarity, image, name,
+    stats, skillText, description
+  );
+
+  overlay.append(panel);
+  document.body.append(overlay);
+
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) closeCardDetail();
+  });
+
+  close.focus();
+}
+
+// 長押し・右クリックによる詳細表示
+let detailPressTimer = null;
+let detailPressStart = null;
+let suppressCardClick = false;
+
+function getInspectCard(element) {
+  const hand = element.closest(".hand-card");
+  if (hand) {
+    const index = [...$("playerHand").children].indexOf(hand);
+    return game?.player.hand[index] || null;
+  }
+
+  const slot = element.closest(".slot[data-unit-id]");
+  if (!slot) return null;
+
+  const side = slot.dataset.side;
+  return game?.[side]?.field.find(
+    unit => unit.instanceId === slot.dataset.unitId
+  ) || null;
+}
+
+function clearDetailPress() {
+  clearTimeout(detailPressTimer);
+  detailPressTimer = null;
+  detailPressStart = null;
+}
+
+document.addEventListener("pointerdown", event => {
+  if (!event.target.closest(".hand-card, .slot[data-unit-id]")) {
+    return;
+  }
+
+  if (event.button !== 0) return;
+
+  const card = getInspectCard(event.target);
+  if (!card) return;
+
+  clearDetailPress();
+  detailPressStart = { x: event.clientX, y: event.clientY };
+
+  detailPressTimer = setTimeout(() => {
+    suppressCardClick = true;
+    openCardDetail(card);
+    clearDetailPress();
+  }, 550);
+}, true);
+
+document.addEventListener("pointermove", event => {
+  if (!detailPressStart) return;
+
+  const distance = Math.hypot(
+    event.clientX - detailPressStart.x,
+    event.clientY - detailPressStart.y
+  );
+
+  if (distance > 12) clearDetailPress();
+}, true);
+
+document.addEventListener("pointerup", clearDetailPress, true);
+document.addEventListener("pointercancel", clearDetailPress, true);
+
+document.addEventListener("click", event => {
+  if (!suppressCardClick) return;
+
+  if (event.target.closest(".hand-card, .slot")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+
+  suppressCardClick = false;
+}, true);
+
+document.addEventListener("contextmenu", event => {
+  const card = getInspectCard(event.target);
+  if (!card) return;
+
+  event.preventDefault();
+  clearDetailPress();
+  openCardDetail(card);
+}, true);
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && cardDetailOpen) {
+    closeCardDetail();
+  }
+});
+
+
 // ========================================
 // AUTH
 // ========================================
