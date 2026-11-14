@@ -782,3 +782,57 @@ h1 span {
   color: var(--cyan);
   text-align: right;
 }
+
+
+/* DECK MANA ANALYSIS */
+
+.deck-mana-analysis {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #30354c;
+}
+
+.mana-analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.mana-analysis-header h3 {
+  margin: 0;
+  color: #929bb7;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.mana-analysis-header span {
+  color: #929bb7;
+  font-size: 11px;
+}
+
+.mana-analysis-header strong {
+  color: #54e6ff;
+}
+
+.mana-analysis-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+
+.mana-analysis-track {
+  height: 8px;
+  border-radius: 10px;
+  background: #272d40;
+  overflow: hidden;
+}
+
+.mana-analysis-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .25s ease;
+}
