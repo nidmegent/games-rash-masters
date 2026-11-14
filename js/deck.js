@@ -21,6 +21,34 @@ import {
 const DECK_SIZE = 10;
 const MAX_SAME_CARD = 3;
 
+
+function numeric(value, fallback) {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+function cardCost(card) {
+  return Math.min(10, Math.floor(
+    numeric(card.cost ?? card.manaCost ?? card.mana, 1)
+  ));
+}
+
+function cardAttack(card) {
+  return Math.floor(
+    numeric(card.atk ?? card.attack ?? card.ATK, 500)
+  );
+}
+
+function cardHp(card) {
+  return Math.max(1, Math.floor(
+    numeric(card.hp ?? card.health ?? card.HP, 1000)
+  ));
+}
+
+
 // ==============================
 // STATE
 // ==============================
@@ -221,6 +249,7 @@ function renderAll() {
   renderDeckList();
   renderDeckStatus();
   renderDeckRaritySummary();
+  renderDeckManaAnalysis();
 }
 
 // ==============================
@@ -248,25 +277,27 @@ const numberValue = (value) => {
   return Number.isFinite(number) ? number : 0;
 };
 
+
 filtered.sort((a, b) => {
   switch (sortType) {
     case "cost-asc":
-      return numberValue(a.cost) - numberValue(b.cost);
+      return cardCost(a) - cardCost(b);
 
     case "cost-desc":
-      return numberValue(b.cost) - numberValue(a.cost);
+      return cardCost(b) - cardCost(a);
 
     case "attack-desc":
-      return numberValue(b.atk) - numberValue(a.atk);
+      return cardAttack(b) - cardAttack(a);
 
     case "hp-desc":
-      return numberValue(b.hp) - numberValue(a.hp);
+      return cardHp(b) - cardHp(a);
 
     default:
       return rarityOrder.indexOf(a.rarity) -
-        rarityOrder.indexOf(b.rarity);
+             rarityOrder.indexOf(b.rarity);
   }
 });
+  
   const list = $("collectionList");
   list.innerHTML = "";
 
@@ -807,9 +838,10 @@ function openCardDetail(card) {
   $("detailCardRarity").textContent = card.rarity || "N";
 
   // カードデータのステータス
-  $("detailCardCost").textContent = card.cost ?? "-";
-  $("detailCardAttack").textContent = card.atk ?? "-";
-  $("detailCardHp").textContent = card.hp ?? "-";
+  $("detailCardCost").textContent = cardCost(card);
+  $("detailCardAttack").textContent = cardAttack(card);
+  $("detailCardHp").textContent = cardHp(card);
+
 
   // スキル説明
   $("detailCardSkill").textContent =
@@ -901,5 +933,71 @@ function renderDeckRaritySummary() {
     track.appendChild(fill);
     row.append(label, track, value);
     container.appendChild(row);
+  });
+}
+
+
+// ==============================
+// DECK MANA ANALYSIS
+// ==============================
+
+function renderDeckManaAnalysis() {
+  const container = $("deckManaDistribution");
+  const average = $("deckAverageCost");
+  if (!container || !average) return;
+
+  const groups = [
+    { label: "LOW 0-3", min: 0, max: 3, color: "#54e6ff" },
+    { label: "MID 4-6", min: 4, max: 6, color: "#a58bff" },
+    { label: "HIGH 7-10", min: 7, max: 10, color: "#ffb45c" }
+  ];
+
+  const counts = [0, 0, 0];
+  let totalCards = 0;
+  let totalCost = 0;
+
+  for (const [cardId, quantity] of deckContents.entries()) {
+    const card = masterCards.find(item => item.id === cardId);
+    if (!card) continue;
+
+    const cost = cardCost(card);
+    totalCards += quantity;
+    totalCost += cost * quantity;
+
+    const index = groups.findIndex(
+      group => cost >= group.min && cost <= group.max
+    );
+
+    if (index >= 0) counts[index] += quantity;
+  }
+
+  average.textContent = totalCards
+    ? (totalCost / totalCards).toFixed(1)
+    : "0.0";
+
+  container.replaceChildren();
+
+  groups.forEach((group, index) => {
+    const row = document.createElement("div");
+    row.className = "mana-analysis-row";
+
+    const label = document.createElement("span");
+    label.textContent = group.label;
+
+    const track = document.createElement("div");
+    track.className = "mana-analysis-track";
+
+    const fill = document.createElement("div");
+    fill.className = "mana-analysis-fill";
+    fill.style.width =
+      `${Math.min(counts[index] / DECK_SIZE * 100, 100)}%`;
+    fill.style.background = group.color;
+
+    const count = document.createElement("span");
+    count.textContent = `${counts[index]}枚`;
+
+    track.append(fill);
+    row.append(label, track, count);
+    container.append(row);
   });
 }
