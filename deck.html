@@ -135,6 +135,49 @@
 
   </section>
 
+  
+<!-- カード詳細画面 -->
+<div id="cardDetailModal" class="card-detail-modal hidden">
+  <div class="card-detail-box">
+
+    <button id="cardDetailClose"
+            class="card-detail-close"
+            type="button">×</button>
+
+    <div class="card-detail-layout">
+
+      <div class="card-detail-image">
+        <img id="detailCardImage" alt="カード画像">
+      </div>
+
+      <div class="card-detail-info">
+        <span id="detailCardRarity" class="detail-rarity"></span>
+        <h2 id="detailCardName"></h2>
+
+        <div class="detail-stats">
+          <div>
+            <span>COST</span>
+            <strong id="detailCardCost">-</strong>
+          </div>
+          <div>
+            <span>ATK</span>
+            <strong id="detailCardAttack">-</strong>
+          </div>
+          <div>
+            <span>HP</span>
+            <strong id="detailCardHp">-</strong>
+          </div>
+        </div>
+
+        <h3>SKILL</h3>
+        <p id="detailCardSkill">スキル情報なし</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  
   <div id="message" class="message hidden"></div>
 
 </main>
