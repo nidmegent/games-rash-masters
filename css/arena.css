@@ -2033,3 +2033,115 @@ body::before {
     animation-duration: .01ms !important;
   }
 }
+
+
+/* ========================================
+   RASH MASTERS EFFECT FIX + SOUND
+======================================== */
+
+/* 召喚エフェクトを最前面に表示 */
+.rarity-summon {
+  z-index: 90;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* 自分・相手のスキル表示位置 */
+.skill-cutin {
+  z-index: 95;
+  top: auto;
+  width: min(440px, 88vw);
+  min-height: 100px;
+  transform: translate(-50%, -50%);
+  animation: skillCutinLocal .95s ease-in-out forwards;
+}
+
+.skill-cutin-player {
+  border-color: #62e7ff;
+  box-shadow: 0 0 28px #62e7ff66;
+  background: linear-gradient(
+    100deg, #071927, #164566, #071927
+  );
+}
+
+.skill-cutin-enemy {
+  border-color: #ff667d;
+  box-shadow: 0 0 28px #ff667d66;
+  background: linear-gradient(
+    100deg, #260c18, #68233c, #260c18
+  );
+}
+
+@keyframes skillCutinLocal {
+  0% {
+    opacity: 0;
+    transform: translate(-75%, -50%) scale(.85);
+  }
+  20%, 75% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-25%, -50%) scale(.95);
+  }
+}
+
+/* サウンド操作 */
+.battle-sound-controls {
+  position: fixed;
+  top: 72px;
+  right: 12px;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #52678e;
+  border-radius: 10px;
+  background: #0c1328ef;
+  box-shadow: 0 5px 20px #0008;
+}
+
+.battle-sound-controls button {
+  padding: 7px 10px;
+  border: 1px solid #5e7b9b;
+  border-radius: 7px;
+  background: #1d3150;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.battle-sound-controls input {
+  width: 80px;
+  accent-color: #62e7ff;
+}
+
+@media (max-width: 650px) {
+  .skill-cutin {
+    width: min(310px, 85vw);
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .skill-cutin-image {
+    width: 60px;
+    height: 78px;
+  }
+
+  .skill-cutin-info strong {
+    font-size: 18px;
+  }
+
+  .battle-sound-controls {
+    top: 66px;
+    right: 6px;
+    padding: 5px;
+  }
+
+  .battle-sound-controls input {
+    width: 55px;
+  }
+}
