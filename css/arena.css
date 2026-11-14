@@ -2264,6 +2264,6 @@ body::before {
 
 @media screen and (min-width: 769px) {
   .fighter.player {
-    transform: translateY(-30px);
+    transform: translateY(-40px);
   }
 }
