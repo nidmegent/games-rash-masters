@@ -310,8 +310,11 @@ filtered.sort((a, b) => {
   filtered.forEach((card) => {
     const quantity = getDeckQuantity(card.id);
 
-    const article = document.createElement("article");
-    article.className = "collection-card";
+const article = document.createElement("article");
+article.className = "collection-card";
+
+const cardRarityClass = String(card.rarity || "N").toUpperCase();
+article.classList.add(`card-glow-${cardRarityClass}`);
 
     const image = document.createElement("img");
     image.src = getImageUrl(card.imagePath);
@@ -438,8 +441,12 @@ function renderDeckList() {
   }
 
   entries.forEach(({ card, cardId, quantity }) => {
-    const row = document.createElement("div");
-    row.className = "deck-card-row";
+    
+const row = document.createElement("div");
+row.className = "deck-card-row";
+
+const cardRarityClass = String(card.rarity || "N").toUpperCase();
+row.classList.add(`card-glow-${cardRarityClass}`);
 
     const image = document.createElement("img");
     image.src = getImageUrl(card.imagePath);
@@ -535,6 +542,19 @@ function renderDeckStatus() {
         quantity > MAX_SAME_CARD ||
         quantity > getOwnedQuantity(cardId)
     );
+    
+// デッキ完成時の発光演出
+const isComplete = total === DECK_SIZE;
+
+$("deckProgress").classList.toggle(
+  "deck-progress-complete",
+  isComplete
+);
+
+document.querySelector(".deck-status")?.classList.toggle(
+  "deck-status-complete",
+  isComplete
+);
 }
 
 // ==============================
