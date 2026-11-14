@@ -337,14 +337,6 @@ if (reduced > 0) {
     value: reduced
   });
 
-  // 防衛したカード上に軽減数値を表示
-  showSkillEffect(
-    side,
-    target.instanceId,
-    "SHIELD",
-    reduced
-  );
-
   playBattleSound("shield");
 }
 
