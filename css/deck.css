@@ -733,3 +733,52 @@ h1 span {
     font-size: 19px;
   }
 }
+
+
+/* ==============================
+   DECK RARITY BALANCE
+============================== */
+
+.deck-rarity-summary {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.deck-rarity-summary h3 {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font: 700 11px Orbitron, sans-serif;
+  letter-spacing: 1px;
+}
+
+.rarity-summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.rarity-summary-item {
+  display: grid;
+  grid-template-columns: 38px 1fr 30px;
+  align-items: center;
+  gap: 10px;
+  font: 600 11px Orbitron, sans-serif;
+}
+
+.rarity-summary-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #272d40;
+}
+
+.rarity-summary-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .25s ease;
+}
+
+.rarity-summary-count {
+  color: var(--cyan);
+  text-align: right;
+}
