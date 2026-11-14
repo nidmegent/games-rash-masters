@@ -743,6 +743,18 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
     cardName(attacker)
   );
 
+  
+const defenseSkill = skillOf(defender);
+
+if (
+  defenseSkill?.trigger === "PASSIVE" &&
+  defenseSkill.effect === "SHIELD" &&
+  defenseSkill.value > 0
+) {
+  await sleep(650);
+}
+
+
   // 攻撃時の強化は今回限り
   if (skillOf(attacker)?.trigger === "ON_ATTACK") {
     attacker.skillAttackBonus = 0;
@@ -1684,20 +1696,27 @@ function showRaritySummon(side, unit) {
 function showSkillCutin(side, unit, skill) {
   if (!skill) return;
 
-  const field = document.querySelector(
-    side === "player" ? ".player-field" : ".enemy-field"
+  const effectLayer = $("effectLayer");
+  if (!effectLayer) return;
+
+  const field = document.getElementById(
+    side === "player" ? "playerSlots" : "enemySlots"
   );
 
-  if (!field) return;
+  const target = findSlot(side, unit.instanceId);
+  const anchor = field || target;
+  if (!anchor) return;
 
-  const rect = field.getBoundingClientRect();
+  const rect = anchor.getBoundingClientRect();
 
-  const layer = document.createElement("div");
-  layer.className = `skill-cutin skill-cutin-${side}`;
+  const cutin = document.createElement("div");
+  cutin.className = `skill-cutin skill-cutin-${side}`;
 
-  layer.style.position = "fixed";
-  layer.style.left = `${rect.left + rect.width / 2}px`;
-  layer.style.top = `${rect.top + rect.height / 2}px`;
+  cutin.style.position = "fixed";
+  cutin.style.left =
+    `${rect.left + rect.width / 2}px`;
+  cutin.style.top =
+    `${rect.top + rect.height / 2}px`;
 
   const image = createCardImage(unit);
   image.className = "skill-cutin-image";
@@ -1717,18 +1736,17 @@ function showSkillCutin(side, unit, skill) {
   name.textContent = cardName(unit);
 
   info.append(trigger, title, name);
-  layer.append(image, info);
+  cutin.append(image, info);
 
-  $("effectLayer").append(layer);
+  effectLayer.append(cutin);
 
   playBattleSound(
     skill.effect === "HEAL" ? "heal" :
     skill.effect === "SHIELD" ? "shield" : "skill"
   );
 
-  setTimeout(() => layer.remove(), 950);
+  setTimeout(() => cutin.remove(), 950);
 }
-
 
 // カード詳細画面
 let cardDetailOpen = false;
