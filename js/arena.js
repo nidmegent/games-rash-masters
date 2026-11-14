@@ -662,6 +662,10 @@ if (
   }, 700);
 }
 
+if (side === "player") {
+  checkAutoAction();
+}
+
 return true;
 
 }
@@ -1007,7 +1011,13 @@ function startTurn(side) {
       : "CPUが行動しています..."
   );
 
-  render();
+  
+render();
+
+if (side === "player") {
+  checkAutoAction();
+}
+
 }
 
 function beginBattlePhase() {
