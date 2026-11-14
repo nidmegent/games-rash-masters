@@ -743,7 +743,6 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
     cardName(attacker)
   );
 
-  
 const defenseSkill = skillOf(defender);
 
 if (
@@ -751,9 +750,12 @@ if (
   defenseSkill.effect === "SHIELD" &&
   defenseSkill.value > 0
 ) {
+  // カットイン表示中に両テリトリーを揺らす
+  screenShake();
+
+  // カットインはそのまま表示を続ける
   await sleep(650);
 }
-
 
   // 攻撃時の強化は今回限り
   if (skillOf(attacker)?.trigger === "ON_ATTACK") {
@@ -774,9 +776,19 @@ if (
   render();
 
   const target = findSlot(defenderSide, defenderId);
-  impactEffect(target);
-  floatingDamage(target, damage);
+  
+impactEffect(target);
+floatingDamage(target, damage);
+
+// 防衛時はすでに揺らしているので二重発動を防ぐ
+if (
+  defenseSkill?.trigger !== "PASSIVE" ||
+  defenseSkill.effect !== "SHIELD" ||
+  defenseSkill.value <= 0
+) {
   screenShake();
+}
+
 
   await sleep(450);
 
