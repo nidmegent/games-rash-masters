@@ -335,6 +335,7 @@ function dealUnitDamage(side, target, amount, source) {
       target.instanceId,
       "SHIELD",
       reduced
+      playBattleSound("shield");
     );
   }
 
@@ -388,7 +389,7 @@ function activateSkill(side, unit, trigger) {
   if (!skill || skill.trigger !== trigger) return;
 
   const { effect, value } = skill;
-  showSkillCutin(unit, skill);
+  showSkillCutin(side, unit, skill);
   const opponent = otherSide(side);
 
   const label =
@@ -593,6 +594,7 @@ function canSummon(side, index) {
   );
 }
 
+
 function summon(side, index) {
   if (!canSummon(side, index)) return false;
 
@@ -608,22 +610,16 @@ function summon(side, index) {
   fighter.field.push(unit);
 
   addLog(
-    `${side === "player" ? "あなた" : "CPU"}が「${cardName(card)}」を召喚！マナ-${cost}`,
+    `${side === "player" ? "あなた" : "CPU"}が` +
+    `「${cardName(card)}」を召喚！マナ-${cost}`,
     "summon"
   );
 
-  
+  // スキル処理のため、先にカードを描画
   render();
 
-  summonEffect(findSlot(side, unit.instanceId));
-
-  summonEffect(findSlot(side, unit.instanceId));
-
-  // 召喚時スキル発動
   activateSkill(side, unit, "ON_SUMMON");
 
-  
-  // 常時スキルの召喚演出
   const passiveSkill = skillOf(unit);
 
   if (
@@ -638,14 +634,18 @@ function summon(side, index) {
     );
   }
 
-  // スキルによる破壊を処理
   removeDestroyedUnits();
 
+  // 最終描画後に召喚エフェクトを出す
   render();
 
-  return true;
+  if (fighter.field.includes(unit)) {
+    showRaritySummon(side, unit);
+  }
 
+  return true;
 }
+
 
 // ========================================
 // ATTACK - ONE ATTACK PER TURN
@@ -714,7 +714,8 @@ async function attackUnit(attackerSide, attackerId, defenderId) {
   game[attackerSide].attacksUsed++;
   attacker.attacked = true;
 
-  
+  playBattleSound("attack");
+
   // 攻撃時スキルを発動
   activateSkill(attackerSide, attacker, "ON_ATTACK");
 
@@ -1441,6 +1442,8 @@ function finish(result) {
   const surrendered = result === "SURRENDER";
   const victory = result === "VICTORY";
 
+  playBattleSound(victory ? "victory" : "defeat");
+
   if (!surrendered) {
     addLog(
       victory
@@ -1640,37 +1643,52 @@ const TRIGGER_NAMES = {
   ON_DESTROY: "破壊時"
 };
 
-// レアリティ別召喚演出
+
 function showRaritySummon(side, unit) {
-  showRaritySummon(side, unit);
   const target = findSlot(side, unit.instanceId);
-  if (!target) return;
+  const layer = $("effectLayer");
+  if (!target || !layer) return;
+
+  const point = elementCenter(target);
+  if (!point) return;
 
   const rarity = cardRarity(unit);
-  const rect = target.getBoundingClientRect();
 
   const effect = document.createElement("div");
   effect.className =
     `rarity-summon rarity-${rarity.toLowerCase()}`;
 
-  effect.style.left = `${rect.left + rect.width / 2}px`;
-  effect.style.top = `${rect.top + rect.height / 2}px`;
+  effect.style.left = `${point.x}px`;
+  effect.style.top = `${point.y}px`;
 
   const label = document.createElement("span");
   label.textContent = `${rarity} SUMMON`;
 
   effect.append(label);
-  document.body.append(effect);
+  layer.append(effect);
 
+  playBattleSound("summon");
   setTimeout(() => effect.remove(), 1100);
 }
 
-// スキル発動カットイン
-function showSkillCutin(unit, skill) {
+
+function showSkillCutin(side, unit, skill) {
   if (!skill || skill.trigger === "PASSIVE") return;
 
+  const field = document.querySelector(
+    side === "player" ? ".player-field" : ".enemy-field"
+  );
+
+  if (!field) return;
+
+  const rect = field.getBoundingClientRect();
+
   const layer = document.createElement("div");
-  layer.className = "skill-cutin";
+  layer.className = `skill-cutin skill-cutin-${side}`;
+
+  layer.style.position = "fixed";
+  layer.style.left = `${rect.left + rect.width / 2}px`;
+  layer.style.top = `${rect.top + rect.height / 2}px`;
 
   const image = createCardImage(unit);
   image.className = "skill-cutin-image";
@@ -1691,10 +1709,17 @@ function showSkillCutin(unit, skill) {
 
   info.append(trigger, title, name);
   layer.append(image, info);
-  document.body.append(layer);
+
+  $("effectLayer").append(layer);
+
+  playBattleSound(
+    skill.effect === "HEAL" ? "heal" :
+    skill.effect === "SHIELD" ? "shield" : "skill"
+  );
 
   setTimeout(() => layer.remove(), 950);
 }
+
 
 // カード詳細画面
 let cardDetailOpen = false;
@@ -1867,6 +1892,165 @@ document.addEventListener("keydown", event => {
     closeCardDetail();
   }
 });
+
+
+/* ========================================
+   RASH MASTERS - BATTLE SOUND
+======================================== */
+
+let battleAudioContext = null;
+let battleSoundEnabled = false;
+let battleSoundVolume = 0.35;
+
+function initBattleAudio() {
+  const AudioContextClass =
+    window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextClass) return null;
+
+  if (!battleAudioContext) {
+    battleAudioContext = new AudioContextClass();
+  }
+
+  if (battleAudioContext.state === "suspended") {
+    battleAudioContext.resume().catch(() => {});
+  }
+
+  return battleAudioContext;
+}
+
+function playBattleTone(
+  frequency,
+  duration = 0.15,
+  type = "sine",
+  volume = 0.25,
+  delay = 0
+) {
+  if (!battleSoundEnabled) return;
+
+  const ctx = battleAudioContext;
+  if (!ctx || ctx.state !== "running") return;
+
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  const start = ctx.currentTime + delay;
+  const end = start + duration;
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(
+    Math.max(1, frequency), start
+  );
+
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(
+    Math.max(0.0001, volume * battleSoundVolume),
+    start + 0.015
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001, end
+  );
+
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+
+  oscillator.start(start);
+  oscillator.stop(end + 0.02);
+}
+
+function playBattleSound(type) {
+  if (!battleSoundEnabled) return;
+
+  switch (type) {
+    case "summon":
+      playBattleTone(330, .18, "triangle", .4);
+      playBattleTone(495, .2, "triangle", .4, .1);
+      playBattleTone(660, .3, "sine", .35, .2);
+      break;
+
+    case "attack":
+      playBattleTone(170, .16, "sawtooth", .45);
+      playBattleTone(85, .22, "triangle", .5, .07);
+      break;
+
+    case "heal":
+      playBattleTone(523, .22, "sine", .35);
+      playBattleTone(784, .3, "sine", .3, .12);
+      break;
+
+    case "shield":
+      playBattleTone(420, .12, "triangle", .35);
+      playBattleTone(300, .2, "sine", .35, .08);
+      break;
+
+    case "skill":
+      playBattleTone(450, .12, "square", .2);
+      playBattleTone(675, .2, "sine", .3, .1);
+      break;
+
+    case "victory":
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        playBattleTone(freq, .4, "triangle", .4, i * .17);
+      });
+      break;
+
+    case "defeat":
+      [392, 311, 220].forEach((freq, i) => {
+        playBattleTone(freq, .45, "sine", .4, i * .23);
+      });
+      break;
+  }
+}
+
+// サウンド操作パネル
+function setupBattleSoundControls() {
+  if (document.getElementById("battleSoundControls")) return;
+
+  const panel = document.createElement("div");
+  panel.id = "battleSoundControls";
+  panel.className = "battle-sound-controls";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "🔇 SOUND OFF";
+  button.setAttribute("aria-pressed", "false");
+
+  const volume = document.createElement("input");
+  volume.type = "range";
+  volume.min = "0";
+  volume.max = "100";
+  volume.value = "35";
+  volume.setAttribute("aria-label", "効果音の音量");
+
+  button.addEventListener("click", () => {
+    battleSoundEnabled = !battleSoundEnabled;
+
+    if (battleSoundEnabled) {
+      initBattleAudio();
+    }
+
+    button.textContent =
+      battleSoundEnabled ? "🔊 SOUND ON" : "🔇 SOUND OFF";
+
+    button.setAttribute(
+      "aria-pressed",
+      String(battleSoundEnabled)
+    );
+
+    if (battleSoundEnabled) {
+      playBattleSound("summon");
+    }
+  });
+
+  volume.addEventListener("input", () => {
+    battleSoundVolume = Number(volume.value) / 100;
+  });
+
+  panel.append(button, volume);
+  document.body.append(panel);
+}
+
+setupBattleSoundControls();
 
 
 // ========================================
