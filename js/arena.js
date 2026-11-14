@@ -329,8 +329,15 @@ function dealUnitDamage(side, target, amount, source) {
     target.currentHp - damage
   );
 
-  
 if (reduced > 0) {
+  // 攻撃力強化・自己回復と同じスキルカットイン
+  showSkillCutin(side, target, {
+    trigger: "PASSIVE",
+    effect: "SHIELD",
+    value: reduced
+  });
+
+  // 防衛したカード上に軽減数値を表示
   showSkillEffect(
     side,
     target.instanceId,
@@ -340,7 +347,6 @@ if (reduced > 0) {
 
   playBattleSound("shield");
 }
-
 
   addLog(
     `✦ ${source} →「${cardName(target)}」に${damage}ダメージ` +
@@ -1636,7 +1642,7 @@ const SKILL_NAMES = {
   HEAL: "自己回復",
   ATK_UP: "攻撃力強化",
   DRAW: "カードドロー",
-  SHIELD: "シールド"
+  SHIELD: "防衛・ダメージ軽減"
 };
 
 const TRIGGER_NAMES = {
@@ -1676,7 +1682,7 @@ function showRaritySummon(side, unit) {
 
 
 function showSkillCutin(side, unit, skill) {
-  if (!skill || skill.trigger === "PASSIVE") return;
+  if (!skill) return;
 
   const field = document.querySelector(
     side === "player" ? ".player-field" : ".enemy-field"
