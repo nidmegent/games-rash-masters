@@ -2146,27 +2146,19 @@ body::before {
   }
 }
 
-
-
 /* ========================================
-   SHIELD SKILL - SLIDE FADE EFFECT
+   SHIELD UI - SAME AS HEAL / ATK UP
 ======================================== */
 
-/* 防衛も攻撃強化・回復と同じUI */
 .skill-vfx.skill-shield {
   border: none;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   animation: none;
 }
 
-/* 横からフェードインする文字 */
+/* 回復・攻撃強化と同じ数値表示スタイル */
 .skill-vfx.skill-shield .skill-vfx-text {
   position: relative;
   z-index: 2;
@@ -2181,30 +2173,29 @@ body::before {
   font-size: clamp(14px, 2.5vw, 22px);
   font-weight: 1000;
   white-space: nowrap;
-  text-shadow: 0 0 12px #62e7ff;
 
-  animation: shieldSlideFade 1.1s ease-in-out forwards;
+  text-shadow: 0 0 12px #62e7ff;
+  animation: shieldTextFloat 1.1s ease-out forwards;
 }
 
-/* 横スライド + フェード */
-@keyframes shieldSlideFade {
+@keyframes shieldTextFloat {
   0% {
     opacity: 0;
-    transform: translateX(-55px) scale(.9);
+    transform: translateY(15px) scale(.8);
   }
 
   25% {
     opacity: 1;
-    transform: translateX(0) scale(1.08);
+    transform: translateY(0) scale(1.1);
   }
 
   70% {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateY(-10px) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: translateX(55px) scale(.95);
+    transform: translateY(-35px) scale(1);
   }
 }
