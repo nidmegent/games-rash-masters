@@ -9,7 +9,7 @@ import {
   collection, doc, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
-// ========================================
+// ======================================== 
 // RASH MASTERS - ARENA VER.2.1
 // ========================================
 
@@ -18,7 +18,7 @@ const $ = id => document.getElementById(id);
 const RULES = {
   deckSize: 10,
   maxCopies: 3,
-  initialHand: 5,
+  initialHand: 3,
   maxHp: 3000,
   maxMana: 10,
   maxHand: 7,
