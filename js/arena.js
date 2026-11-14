@@ -637,13 +637,34 @@ function summon(side, index) {
   // 最終描画後に召喚エフェクトを出す
   render();
 
-  if (fighter.field.includes(unit)) {
-    showRaritySummon(side, unit);
-  }
-
-  return true;
+  
+if (fighter.field.includes(unit)) {
+  showRaritySummon(side, unit);
 }
 
+// 自分のテリトリーが3枚になったら攻撃フェーズへ
+if (
+  side === "player" &&
+  fighter.field.length >= RULES.maxField &&
+  game.phase === "MAIN"
+) {
+  // 召喚エフェクトを少し見せてから移行
+  setTimeout(() => {
+    if (
+      game &&
+      !game.finished &&
+      game.active === "player" &&
+      game.phase === "MAIN" &&
+      game.player.field.length >= RULES.maxField
+    ) {
+      beginBattlePhase();
+    }
+  }, 700);
+}
+
+return true;
+
+}
 
 // ========================================
 // ATTACK - ONE ATTACK PER TURN
