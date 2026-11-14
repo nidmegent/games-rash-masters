@@ -554,3 +554,45 @@ h1 span {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==============================
+   CARD SORT
+============================== */
+
+.sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+
+.sort-row label {
+  color: var(--muted);
+  font: 600 10px Orbitron, sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.sort-row select {
+  flex: 1;
+  max-width: 250px;
+  min-width: 0;
+  padding: 10px 12px;
+  color: var(--text);
+  background: #0b0f1b;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 11px;
+  outline: none;
+}
+
+.sort-row select:focus {
+  border-color: var(--purple);
+}
+
+@media (max-width: 520px) {
+  .sort-row select {
+    max-width: none;
+  }
+}
