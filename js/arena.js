@@ -388,6 +388,7 @@ function activateSkill(side, unit, trigger) {
   if (!skill || skill.trigger !== trigger) return;
 
   const { effect, value } = skill;
+  showSkillCutin(unit, skill);
   const opponent = otherSide(side);
 
   const label =
@@ -613,6 +614,8 @@ function summon(side, index) {
 
   
   render();
+
+  summonEffect(findSlot(side, unit.instanceId));
 
   summonEffect(findSlot(side, unit.instanceId));
 
@@ -1263,11 +1266,17 @@ function renderHand() {
 
     button.append(name, cost);
 
-    button.disabled =
-      game.finished || busy ||
-      game.active !== "player" ||
-      game.phase !== "MAIN" ||
-      !canSummon("player", index);
+    
+const unavailable =
+  game.finished || busy ||
+  game.active !== "player" ||
+  game.phase !== "MAIN" ||
+  !canSummon("player", index);
+
+button.disabled = false;
+button.classList.toggle("unavailable", unavailable);
+button.setAttribute("aria-disabled", String(unavailable));
+
 
     button.addEventListener("click", () => {
       if (
@@ -1451,6 +1460,17 @@ function finish(result) {
         ? "CPUとの戦いに勝利しました！"
         : "CPUとの戦いに敗北しました。";
 
+  const resultOverlay = $("resultOverlay");
+
+resultOverlay.classList.remove(
+  "result-victory",
+  "result-defeat"
+);
+
+resultOverlay.classList.add(
+  victory ? "result-victory" : "result-defeat"
+);
+  
   $("resultOverlay").classList.remove("hidden");
 
   render();
@@ -1622,6 +1642,7 @@ const TRIGGER_NAMES = {
 
 // レアリティ別召喚演出
 function showRaritySummon(side, unit) {
+  showRaritySummon(side, unit);
   const target = findSlot(side, unit.instanceId);
   if (!target) return;
 
