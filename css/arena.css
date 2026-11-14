@@ -2257,11 +2257,13 @@ body::before {
   }
 }
 
+
 /* ========================================
-   PLAYER HP BAR POSITION ADJUST
-   自分のHPバーを少し上へ
+   PC版限定：自分のHPバーを上に移動
 ======================================== */
 
-.fighter.player {
-  transform: translateY(-20px);
+@media screen and (min-width: 769px) {
+  .fighter.player {
+    transform: translateY(-30px);
+  }
 }
