@@ -288,6 +288,18 @@ filtered.sort((a, b) => {
       image.style.visibility = "hidden";
     };
 
+    // カード画像をタップ・右クリックで詳細表示
+image.style.cursor = "pointer";
+
+image.addEventListener("click", () => {
+  openCardDetail(card);
+});
+
+image.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+  openCardDetail(card);
+});
+
     const info = document.createElement("div");
     info.className = "collection-info";
 
@@ -403,6 +415,18 @@ function renderDeckList() {
     image.onerror = () => {
       image.style.visibility = "hidden";
     };
+
+    // カード画像をタップ・右クリックで詳細表示
+image.style.cursor = "pointer";
+
+image.addEventListener("click", () => {
+  openCardDetail(card);
+});
+
+image.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+  openCardDetail(card);
+});
 
     const info = document.createElement("div");
     info.className = "deck-card-info";
@@ -767,3 +791,53 @@ function showMessage(message, type = "success") {
 
 // カード並び替え
 $("cardSort").addEventListener("change", renderCollection);
+
+// ==============================
+// CARD DETAIL
+// ==============================
+
+function openCardDetail(card) {
+  const modal = $("cardDetailModal");
+
+  $("detailCardImage").src = getImageUrl(card.imagePath);
+  $("detailCardImage").alt = card.name || "CARD";
+
+  $("detailCardName").textContent = card.name || "UNNAMED CARD";
+  $("detailCardRarity").textContent = card.rarity || "N";
+
+  // カードデータのステータス
+  $("detailCardCost").textContent = card.cost ?? "-";
+  $("detailCardAttack").textContent = card.atk ?? "-";
+  $("detailCardHp").textContent = card.hp ?? "-";
+
+  // スキル説明
+  $("detailCardSkill").textContent =
+    card.skillDescription ||
+    card.description ||
+    "スキル情報なし";
+
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeCardDetail() {
+  $("cardDetailModal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+// 閉じるボタン
+$("cardDetailClose").addEventListener("click", closeCardDetail);
+
+// 背景クリックで閉じる
+$("cardDetailModal").addEventListener("click", (event) => {
+  if (event.target === $("cardDetailModal")) {
+    closeCardDetail();
+  }
+});
+
+// ESCキーで閉じる
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeCardDetail();
+  }
+});
