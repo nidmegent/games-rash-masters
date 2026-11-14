@@ -101,6 +101,17 @@
         <button class="filter-button" data-rarity="UR">UR</button>
       </div>
 
+      <div class="sort-row">
+        <label for="cardSort">SORT BY</label>
+        <select id="cardSort">
+          <option value="rarity">レアリティ順</option>
+          <option value="cost-asc">マナコスト：低い順</option>
+          <option value="cost-desc">マナコスト：高い順</option>
+          <option value="attack-desc">攻撃力：高い順</option>
+          <option value="hp-desc">HP：高い順</option>
+        </select>
+      </div>
+
       <div id="collectionList" class="collection-list">
         <p class="loading">LOADING CARDS...</p>
       </div>
