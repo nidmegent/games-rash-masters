@@ -4,77 +4,366 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GACHA ADMIN | RASH MASTERS</title>
-  <link rel="stylesheet" href="../css/gacha-admin.css">
+  <meta name="theme-color" content="#090914">
+  <title>ガチャ管理 | RASH MASTERS</title>
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="icon" href="../favicon.ico">
+  <style>
+    [hidden] { display: none !important; }
+
+    .gacha-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .gacha-section {
+      margin: 25px 0;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .gacha-section h3 {
+      font-size: 14px;
+      color: var(--cyan);
+      margin: 0 0 16px;
+    }
+
+    .rate-item {
+      display: grid;
+      grid-template-columns: 55px 1fr 90px;
+      gap: 10px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .rate-item input {
+      width: 100%;
+      min-width: 0;
+      padding: 10px;
+      background: #0c0c19;
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .rate-bar {
+      height: 9px;
+      background: #29263b;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .rate-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      width: 0;
+    }
+
+    .pool-tools {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pool-tools input {
+      flex: 1;
+      min-width: 150px;
+      padding: 10px;
+      background: #0c0c19;
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .pool-list {
+      display: grid;
+      gap: 8px;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .pool-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: #0c0c19;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .pool-card img {
+      width: 38px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    .pool-card input {
+      accent-color: var(--purple);
+    }
+
+    .pool-card span {
+      flex: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .gacha-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      background: #0c0c19;
+      border-radius: 10px;
+    }
+
+    .gacha-row strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .gacha-row small {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .gacha-row button {
+      background: #25203b;
+      color: white;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .gacha-row button:hover {
+      border-color: var(--purple);
+    }
+
+    .publish-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 13px;
+    }
+
+    .publish-label input {
+      accent-color: var(--cyan);
+      width: 17px;
+      height: 17px;
+    }
+
+    .danger-button {
+      padding: 12px 16px;
+      border: 1px solid var(--danger);
+      background: rgba(255,100,131,.12);
+      color: var(--danger);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .danger-button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 500px) {
+      .rate-item {
+        grid-template-columns: 40px 1fr 75px;
+      }
+      .gacha-row {
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
 <body>
-  <header class="header">
-    <a href="../home.html" class="logo">RASH <span>MASTERS</span></a>
-    <a href="../home.html" class="back">HOME</a>
-  </header>
 
-  <main id="loading">管理者権限を確認しています...</main>
+  <div id="authLoading" class="loading">
+    管理者権限を確認しています...
+  </div>
 
-  <main id="adminContent" class="container" hidden>
-    <p class="eyebrow">RASH MASTERS / ADMINISTRATION</p>
-    <h1>GACHA <span>MANAGEMENT</span></h1>
-    <p class="subtitle">ガチャの作成・排出設定・公開管理</p>
+  <div id="adminContent" class="admin-layout" hidden>
 
-    <section class="panel">
-      <h2>REGISTERED GACHAS</h2>
-      <div id="gachaList"></div>
-      <button id="newGacha" class="secondary">＋ NEW GACHA</button>
-    </section>
+    <aside class="sidebar">
+      <a class="brand" href="../home.html">
+        <span class="brand-mark">R</span>
+        <span>
+          <strong>RASH MASTERS</strong>
+          <small>ADMIN PANEL</small>
+        </span>
+      </a>
 
-    <section class="panel">
-      <h2>GACHA SETTINGS</h2>
+      <div class="sidebar-label">MANAGEMENT</div>
 
-      <form id="gachaForm">
-        <label>ガチャ名
-          <input id="gachaName" maxlength="60" required
-                 placeholder="例：レジェンドガチャ">
-        </label>
+      <nav class="side-nav">
+        <a href="../home.html">⌂ <span>プレイヤーホーム</span></a>
+        <a href="cards.html">▣ <span>カード管理</span></a>
+        <a href="gacha.html" class="active">✦ <span>ガチャ管理</span></a>
+      </nav>
 
-        <label>説明
-          <textarea id="gachaDescription" maxlength="500"
-                    placeholder="ガチャの説明"></textarea>
-        </label>
+      <div class="sidebar-bottom">
+        <div class="admin-indicator">
+          <span class="status-dot"></span>
+          SUPER ADMIN
+        </div>
+        <button id="logoutButton" class="logout-button">
+          ログアウト
+        </button>
+      </div>
+    </aside>
 
-        <div class="fields">
-          <label>1回の必要コイン
-            <input id="singleCost" type="number" min="0"
-                   max="100000000" step="1" value="100" required>
-          </label>
-          <label>10連の必要コイン
-            <input id="tenCost" type="number" min="0"
-                   max="100000000" step="1" value="1000" required>
-          </label>
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">
+            RASH MASTERS / ADMINISTRATION
+          </div>
+          <h1>ガチャ管理</h1>
         </div>
 
-        <h3>RARITY RATES</h3>
-        <div id="rates"></div>
-        <p id="rateTotal">合計 100%</p>
-
-        <h3>CARD POOL</h3>
-        <p class="hint">排出対象にするカードを選択してください。</p>
-        <div id="cardPool">カードを読み込み中...</div>
-
-        <h3>PUBLICATION</h3>
-        <label class="check">
-          <input id="enabled" type="checkbox">
-          プレイヤーに公開する
-        </label>
-
-        <div class="actions">
-          <button id="saveGacha" type="submit">SAVE SETTINGS</button>
-          <button id="deleteGacha" type="button"
-                  class="danger" disabled>DELETE GACHA</button>
+        <div class="admin-profile">
+          <span class="profile-icon">♛</span>
+          <span id="adminEmail">確認中...</span>
         </div>
-      </form>
-    </section>
+      </header>
 
-    <p id="message" role="status" aria-live="polite"></p>
-  </main>
+      <section class="welcome-section">
+        <div>
+          <span class="section-tag">GACHA DATABASE</span>
+          <h2>ガチャマスター</h2>
+          <p>ガチャの排出率・対象カード・公開状態を管理します。</p>
+        </div>
+
+        <div class="total-card">
+          <span>REGISTERED GACHAS</span>
+          <strong id="gachaCount">0</strong>
+        </div>
+      </section>
+
+      <div id="message" class="message" role="status"></div>
+
+      <section class="workspace">
+
+        <div class="editor-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-tag">GACHA EDITOR</span>
+              <h2 id="formTitle">新しいガチャを登録</h2>
+            </div>
+            <span class="editor-icon">✦</span>
+          </div>
+
+          <form id="gachaForm">
+            <div class="form-group">
+              <label for="gachaName">ガチャ名 *</label>
+              <input id="gachaName" maxlength="60" required
+                placeholder="例：伝説のURガチャ">
+            </div>
+
+            <div class="form-group">
+              <label for="gachaDescription">説明</label>
+              <textarea id="gachaDescription" rows="3"
+                maxlength="500"
+                placeholder="ガチャの説明を入力"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="singleCost">1回の必要コイン</label>
+                <input id="singleCost" type="number"
+                  min="0" max="100000000" step="1"
+                  value="100" required>
+              </div>
+
+              <div class="form-group">
+                <label for="tenCost">10連の必要コイン</label>
+                <input id="tenCost" type="number"
+                  min="0" max="100000000" step="1"
+                  value="1000" required>
+              </div>
+            </div>
+
+            <div class="gacha-section">
+              <h3>RARITY RATES / 排出率</h3>
+              <div id="rateInputs"></div>
+              <p id="rateTotal" class="gacha-note"></p>
+            </div>
+
+            <div class="gacha-section">
+              <h3>CARD POOL / 排出対象</h3>
+              <p class="gacha-note">
+                登録済みカードから排出対象を選択します。
+              </p>
+
+              <div class="pool-tools">
+                <input id="cardSearch" type="search"
+                  placeholder="カード名で検索">
+                <button id="selectAllCards" type="button"
+                  class="secondary-button">表示中を選択</button>
+                <button id="clearCards" type="button"
+                  class="secondary-button">選択解除</button>
+              </div>
+
+              <p id="selectedCount" class="gacha-note">選択中：0枚</p>
+              <div id="cardPool" class="pool-list"></div>
+            </div>
+
+            <div class="gacha-section">
+              <h3>PUBLICATION / 公開設定</h3>
+              <label class="publish-label">
+                <input id="enabled" type="checkbox">
+                プレイヤーに公開する
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button id="saveButton" type="submit"
+                class="primary-button">＋ ガチャを登録</button>
+              <button id="cancelButton" type="button"
+                class="secondary-button" hidden>
+                編集キャンセル
+              </button>
+            </div>
+
+            <div style="margin-top:14px">
+              <button id="deleteButton" type="button"
+                class="danger-button" disabled>
+                このガチャを削除
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="list-panel">
+          <div class="panel-heading list-heading">
+            <div>
+              <span class="section-tag">REGISTERED DATA</span>
+              <h2>登録済みガチャ</h2>
+            </div>
+            <button id="refreshButton" class="refresh-button">
+              ↻ 更新
+            </button>
+          </div>
+
+          <div id="gachaList" class="card-list">
+            <div class="loading">読み込み中...</div>
+          </div>
+        </div>
+
+      </section>
+
+      <footer class="admin-footer">
+        RASH MASTERS ADMINISTRATION SYSTEM
+      </footer>
+    </main>
+  </div>
 
   <script type="module" src="../js/admin-gacha.js"></script>
 </body>
