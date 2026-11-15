@@ -359,6 +359,83 @@
 
       </section>
 
+      
+<section class="workspace" id="coinManagement">
+  <div class="editor-panel" style="width:100%;max-width:100%;">
+    <div class="panel-heading">
+      <div>
+        <span class="section-tag">COIN MANAGEMENT</span>
+        <h2>運営専用コイン付与</h2>
+      </div>
+      <span class="editor-icon">🪙</span>
+    </div>
+
+    <p class="gacha-note">
+      プレイヤーのUIDを指定してコインを付与します。
+      付与履歴はFirestoreに保存されます。
+    </p>
+
+    <form id="coinGrantForm">
+      <div class="form-group">
+        <label for="coinTargetUid">
+          付与先プレイヤーUID *
+        </label>
+        <input
+          id="coinTargetUid"
+          type="text"
+          maxlength="128"
+          placeholder="Firebase UIDを入力"
+          autocomplete="off"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="coinAmount">付与コイン数 *</label>
+        <input
+          id="coinAmount"
+          type="number"
+          min="1"
+          max="100000"
+          step="1"
+          value="100"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="coinReason">付与理由 *</label>
+        <textarea
+          id="coinReason"
+          rows="3"
+          maxlength="200"
+          placeholder="例：イベント報酬"
+          required
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button
+          id="coinGrantButton"
+          type="submit"
+          class="primary-button"
+        >
+          🪙 コインを付与する
+        </button>
+      </div>
+
+      <p
+        id="coinGrantMessage"
+        class="gacha-note"
+        role="status"
+        aria-live="polite"
+        style="margin-top:14px;"
+      ></p>
+    </form>
+  </div>
+</section>
+
+
       <footer class="admin-footer">
         RASH MASTERS ADMINISTRATION SYSTEM
       </footer>
