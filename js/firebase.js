@@ -1,3 +1,4 @@
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 
 import {
@@ -13,7 +14,15 @@ import {
   getStorage
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-storage.js";
 
-// Firebase configuration
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js";
+
+// ========================================
+// FIREBASE CONFIG
+// ========================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyBdYQicyitdp2d7GgbYdy7Sx4-26hLQUpY",
   authDomain: "rash-masters.firebaseapp.com",
@@ -24,26 +33,59 @@ const firebaseConfig = {
   measurementId: "G-VLSKMQB0MF"
 };
 
-// Initialize Firebase
+// ========================================
+// INITIALIZE FIREBASE
+// ========================================
+
 const app = initializeApp(firebaseConfig);
 
-// Authentication
+// ========================================
+// APP CHECK
+// ========================================
+
+// Google Cloudで作成したサイトキーに置き換える
+const RECAPTCHA_ENTERPRISE_SITE_KEY =
+  "6LcJxCAuAAAAACzXbHwGvQ8ynWd9HE-1CrlNxYVl";
+
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider(
+    RECAPTCHA_ENTERPRISE_SITE_KEY
+  ),
+  isTokenAutoRefreshEnabled: true
+});
+
+// ========================================
+// AUTHENTICATION
+// ========================================
+
 const auth = getAuth(app);
 
 // Google Login
 const googleProvider = new GoogleAuthProvider();
+
 googleProvider.setCustomParameters({
   prompt: "select_account"
 });
 
-// Database
+// ========================================
+// FIRESTORE
+// ========================================
+
 const db = getFirestore(app);
 
-// Storage
+// ========================================
+// STORAGE
+// ========================================
+
 const storage = getStorage(app);
+
+// ========================================
+// EXPORT
+// ========================================
 
 export {
   app,
+  appCheck,
   auth,
   googleProvider,
   db,
