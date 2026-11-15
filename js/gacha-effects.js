@@ -131,17 +131,65 @@ async function loadPreviewCards(count) {
       return [registered[registered.length - 1]];
     }
 
-    // レアリティが偏っていても
-    // 登録カードを最大10枚表示する。
-    const result = [];
+    // STEP 4-C 修正
+// 10連プレビューではSSR・URを優先的に含める
+// 本番抽選の確率には影響しない
 
-    for (let i = 0; i < count; i++) {
-      result.push(
-        registered[i % registered.length]
-      );
-    }
+const result = [];
 
-    return result;
+const urCards = registered.filter(
+  card => card.rarity === "UR"
+);
+
+const ssrCards = registered.filter(
+  card => card.rarity === "SSR"
+);
+
+const otherCards = registered.filter(
+  card =>
+    card.rarity !== "UR" &&
+    card.rarity !== "SSR"
+);
+
+// URを最大1枚
+if (urCards.length > 0) {
+  result.push(urCards[0]);
+}
+
+// SSRを最大2枚
+for (
+  let i = 0;
+  i < Math.min(2, ssrCards.length);
+  i++
+) {
+  result.push(ssrCards[i]);
+}
+
+// 残りを通常カードで埋める
+const remaining = otherCards.length > 0
+  ? otherCards
+  : registered;
+
+let index = 0;
+
+while (result.length < count) {
+  result.push(
+    remaining[index % remaining.length]
+  );
+  index++;
+}
+
+// 表示順をシャッフル
+for (let i = result.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+
+  [result[i], result[j]] = [
+    result[j],
+    result[i]
+  ];
+}
+
+return result;
   } catch (error) {
     console.warn("Preview card load:", error);
     return DEMO_CARDS.slice(0, count);
