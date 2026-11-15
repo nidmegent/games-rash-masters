@@ -510,9 +510,13 @@ exports.drawGacha = onCall(
             id => db.doc(`cards/${id}`)
           );
 
-          const cardSnaps = await tx.getAll(
-            ...cardRefs
-          );
+          
+          const cardSnaps = [];
+            for (const cardRef of cardRefs) {
+            const cardSnap = await tx.get(cardRef);
+            cardSnaps.push(cardSnap);
+          }
+
 
           const pools = Object.fromEntries(
             RARITIES.map(rarity => [
