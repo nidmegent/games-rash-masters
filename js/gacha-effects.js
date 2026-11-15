@@ -1,10 +1,22 @@
 
 "use strict";
 
-// ========================================
-// RASH MASTERS GACHA EFFECTS
-// STEP 4-A / PREVIEW ONLY
-// ========================================
+// RASH MASTERS - GACHA EFFECTS STEP 4-B
+// VISUAL & SOUND PREVIEW ONLY
+
+import { auth, db } from "./firebase.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+import {
+  setupGachaSound,
+  playSummonStart,
+  playCardReveal,
+  playSummarySound
+} from "./gacha-sound.js";
 
 const $ = id => document.getElementById(id);
 
@@ -20,33 +32,34 @@ const reduceMotion = window.matchMedia(
 
 const RARITIES = ["N", "R", "SR", "SSR", "UR"];
 
-// プレビュー用の固定データ。
-// 実際の抽選結果ではありません。
 const DEMO_CARDS = [
-  { name: "DEMO CARD N", rarity: "N" },
-  { name: "DEMO CARD R", rarity: "R" },
-  { name: "DEMO CARD SR", rarity: "SR" },
-  { name: "DEMO CARD SSR", rarity: "SSR" },
-  { name: "DEMO CARD UR", rarity: "UR" },
-  { name: "DEMO CARD N", rarity: "N" },
-  { name: "DEMO CARD R", rarity: "R" },
-  { name: "DEMO CARD SR", rarity: "SR" },
-  { name: "DEMO CARD SSR", rarity: "SSR" },
-  { name: "DEMO CARD UR", rarity: "UR" }
+  { name: "DEMO N", rarity: "N" },
+  { name: "DEMO R", rarity: "R" },
+  { name: "DEMO SR", rarity: "SR" },
+  { name: "DEMO SSR", rarity: "SSR" },
+  { name: "DEMO UR", rarity: "UR" },
+  { name: "DEMO N", rarity: "N" },
+  { name: "DEMO R", rarity: "R" },
+  { name: "DEMO SR", rarity: "SR" },
+  { name: "DEMO SSR", rarity: "SSR" },
+  { name: "DEMO UR", rarity: "UR" }
 ];
 
 let active = false;
+let loading = false;
 let cards = [];
-let currentIndex = 0;
 let phase = "idle";
 let timer = null;
 let previousFocus = null;
+let previousOverflow = "";
 
-function el(tag, className, text) {
+function element(tag, className = "", value) {
   const node = document.createElement(tag);
+  node.className = className;
 
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
+  if (value !== undefined) {
+    node.textContent = value;
+  }
 
   return node;
 }
@@ -58,9 +71,125 @@ function clearTimer() {
   }
 }
 
-function setPreviewButtons(disabled) {
-  previewSingle.disabled = disabled;
-  previewTen.disabled = disabled;
+function safeImageUrl(path) {
+  if (
+    typeof path !== "string" ||
+    !/^assets\/cards\/(?:N|R|SR|SSR|UR)\/[a-zA-Z0-9_.-]+\.(?:png|jpg|jpeg|webp|gif)$/i.test(path)
+  ) {
+    return "";
+  }
+
+  return new URL(
+    `../${path}`,
+    import.meta.url
+  ).href;
+}
+
+async function loadPreviewCards(count) {
+  // Firestoreから読み取りのみ行う。
+  // ガチャ抽選やカード付与は行わない。
+  if (!auth.currentUser) {
+    return DEMO_CARDS.slice(0, count);
+  }
+
+  try {
+    const snapshot = await getDocs(
+      collection(db, "cards")
+    );
+
+    const registered = snapshot.docs
+      .map(item => ({
+        cardId: item.id,
+        ...item.data()
+      }))
+      .filter(card =>
+        RARITIES.includes(card.rarity) &&
+        typeof card.name === "string" &&
+        card.name.trim().length > 0
+      );
+
+    if (!registered.length) {
+      return DEMO_CARDS.slice(0, count);
+    }
+
+    // 演出確認用にレアリティ順で並べる。
+    // 実際のガチャ排出率は使用しない。
+    registered.sort((a, b) =>
+      RARITIES.indexOf(a.rarity) -
+      RARITIES.indexOf(b.rarity)
+    );
+
+    if (count === 1) {
+      // UR → SSR → その他の優先順で
+      // 演出確認用カードを1枚選ぶ。
+      const selected = [...registered].sort(
+        (a, b) =>
+          RARITIES.indexOf(b.rarity) -
+          RARITIES.indexOf(a.rarity)
+      );
+
+      return [selected[0]];
+    }
+
+    const result = [];
+
+    for (let i = 0; i < count; i++) {
+      result.push(
+        registered[i % registered.length]
+      );
+    }
+
+    return result;
+
+  } catch (error) {
+    console.warn(
+      "Preview cards unavailable:",
+      error
+    );
+
+    return DEMO_CARDS.slice(0, count);
+  }
+}
+
+function makeCard(card, compact = false) {
+  const rarity = RARITIES.includes(card.rarity)
+    ? card.rarity
+    : "N";
+
+  const article = element(
+    "article",
+    compact
+      ? `summon-result-item summon-rarity-${rarity}`
+      : "summon-reveal-card"
+  );
+
+  const imageUrl = safeImageUrl(card.imagePath);
+
+  if (imageUrl) {
+    const image = element("img");
+    image.src = imageUrl;
+    image.alt = card.name || "カード";
+    image.loading = "eager";
+
+    image.addEventListener("error", () => {
+      image.replaceWith(
+        element("div", "placeholder-art", "✦")
+      );
+    }, { once: true });
+
+    article.append(image);
+  } else {
+    article.append(
+      element("div", "placeholder-art", "✦")
+    );
+  }
+
+  article.append(
+    element("strong", "", card.name || "CARD"),
+    element("small", "", rarity)
+  );
+
+  return article;
 }
 
 function clearStage() {
@@ -69,43 +198,17 @@ function clearStage() {
 }
 
 function makeTopline() {
-  const top = el("div", "summon-topline");
+  const top = element("div", "summon-topline");
 
-  const label = el(
+  const label = element(
     "span",
     "summon-mode",
-    "RASH MASTERS / DEMO"
+    "RASH MASTERS / PREVIEW"
   );
 
   skipButton.hidden = false;
   top.append(label, skipButton);
   stage.append(top);
-}
-
-function makeCard(card, compact = false) {
-  const rarity = RARITIES.includes(card.rarity)
-    ? card.rarity
-    : "N";
-
-  const article = el(
-    "article",
-    compact
-      ? `summon-result-item summon-rarity-${rarity}`
-      : `summon-reveal-card`
-  );
-
-  const placeholder = el(
-    "div",
-    "placeholder-art",
-    "✦"
-  );
-
-  const name = el("strong", "", card.name);
-  const badge = el("small", "", rarity);
-
-  article.append(placeholder, name, badge);
-
-  return article;
 }
 
 function showCircle() {
@@ -115,24 +218,27 @@ function showCircle() {
   clearStage();
   makeTopline();
 
-  const circle = el("div", "summon-circle");
-  const symbol = el("div", "summon-symbol", "✦");
+  const circle = element("div", "summon-circle");
 
-  circle.append(symbol);
-
-  const title = el(
-    "h2",
-    "summon-stage-title",
-    "SUMMONING"
+  circle.append(
+    element("div", "summon-symbol", "✦")
   );
 
-  const message = el(
-    "p",
-    "summon-stage-message",
-    "カードの力を呼び覚ませ..."
+  stage.append(
+    circle,
+    element(
+      "h2",
+      "summon-stage-title",
+      "SUMMONING"
+    ),
+    element(
+      "p",
+      "summon-stage-message",
+      "魔力が集まり、運命のカードが目覚める..."
+    )
   );
 
-  stage.append(circle, title, message);
+  playSummonStart();
 
   timer = setTimeout(
     () => showReveal(0),
@@ -141,13 +247,10 @@ function showCircle() {
 }
 
 function showReveal(index) {
-  if (!active) return;
+  if (!active || !cards[index]) return;
 
   clearStage();
-
-  currentIndex = index;
   phase = "reveal";
-
   makeTopline();
 
   const card = cards[index];
@@ -155,12 +258,12 @@ function showReveal(index) {
     ? card.rarity
     : "N";
 
-  const wrap = el(
+  const wrap = element(
     "div",
     `summon-reveal summon-rarity-${rarity}`
   );
 
-  const heading = el(
+  const heading = element(
     "h2",
     "summon-stage-title",
     rarity === "UR"
@@ -170,21 +273,19 @@ function showReveal(index) {
         : "CARD REVEAL"
   );
 
-  const cardElement = makeCard(card);
-
-  const rarityText = el(
+  const rarityText = element(
     "div",
     "summon-rarity",
     rarity
   );
 
-  const progress = el(
+  const progress = element(
     "p",
     "summon-progress",
     `${index + 1} / ${cards.length}`
   );
 
-  const next = el(
+  const next = element(
     "button",
     "summon-next-button",
     index === cards.length - 1
@@ -204,7 +305,7 @@ function showReveal(index) {
 
   wrap.append(
     heading,
-    cardElement,
+    makeCard(card),
     rarityText,
     progress,
     next
@@ -212,6 +313,7 @@ function showReveal(index) {
 
   stage.append(wrap);
 
+  playCardReveal(rarity);
   next.focus();
 }
 
@@ -220,10 +322,9 @@ function showSummary() {
 
   clearStage();
   phase = "summary";
-
   makeTopline();
 
-  const heading = el(
+  const heading = element(
     "h2",
     "summon-stage-title",
     cards.length === 10
@@ -231,13 +332,13 @@ function showSummary() {
       : "SUMMON RESULT"
   );
 
-  const message = el(
+  const message = element(
     "p",
     "summon-stage-message",
-    "演出プレビュー / 実際のカード付与はありません"
+    "演出プレビュー / コイン消費・カード付与なし"
   );
 
-  const grid = el(
+  const grid = element(
     "div",
     "summon-result-grid"
   );
@@ -246,7 +347,7 @@ function showSummary() {
     grid.append(makeCard(card, true));
   });
 
-  const close = el(
+  const close = element(
     "button",
     "summon-next-button",
     "プレビューを終了"
@@ -255,7 +356,14 @@ function showSummary() {
   close.type = "button";
   close.addEventListener("click", closePreview);
 
-  stage.append(heading, message, grid, close);
+  stage.append(
+    heading,
+    message,
+    grid,
+    close
+  );
+
+  playSummarySound();
   close.focus();
 }
 
@@ -265,16 +373,15 @@ function closePreview() {
   active = false;
   phase = "idle";
   cards = [];
-  currentIndex = 0;
 
   skipButton.hidden = true;
-  
   overlay.hidden = true;
   stage.replaceChildren();
 
-  setPreviewButtons(false);
+  document.body.style.overflow = previousOverflow;
 
-  document.body.style.overflow = "";
+  previewSingle.disabled = false;
+  previewTen.disabled = false;
 
   if (previousFocus?.isConnected) {
     previousFocus.focus();
@@ -293,28 +400,45 @@ function skipPreview() {
   }
 }
 
-function startPreview(count) {
-  if (active || (count !== 1 && count !== 10)) {
+async function startPreview(count) {
+  if (
+    active ||
+    loading ||
+    (count !== 1 && count !== 10)
+  ) {
     return;
   }
 
-  // 固定サンプル。確率抽選は行わない。
-  cards = count === 1
-    ? [{ name: "DEMO CARD UR", rarity: "UR" }]
-    : DEMO_CARDS.map(card => ({ ...card }));
+  loading = true;
+  previewSingle.disabled = true;
+  previewTen.disabled = true;
 
-  currentIndex = 0;
-  active = true;
+  try {
+    cards = await loadPreviewCards(count);
 
-  previousFocus = document.activeElement;
+    if (!cards.length) {
+      throw new Error("プレビューカードがありません。");
+    }
 
-  overlay.hidden = false;
-  document.body.style.overflow = "hidden";
+    previousFocus = document.activeElement;
+    previousOverflow = document.body.style.overflow;
 
-  setPreviewButtons(true);
-  showCircle();
+    active = true;
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
 
-  skipButton.focus();
+    showCircle();
+    skipButton.focus();
+
+  } catch (error) {
+    console.error("Preview error:", error);
+    alert("演出プレビューを開始できませんでした。");
+    previewSingle.disabled = false;
+    previewTen.disabled = false;
+
+  } finally {
+    loading = false;
+  }
 }
 
 previewSingle.addEventListener("click", () => {
@@ -335,11 +459,12 @@ document.addEventListener("keydown", event => {
     skipPreview();
   }
 
-  // モーダル外へTab移動しないようにする
   if (event.key === "Tab") {
-    const focusable = [...overlay.querySelectorAll(
-      "button:not([disabled])"
-    )].filter(button => button.offsetParent !== null);
+    const focusable = [
+      ...overlay.querySelectorAll(
+        "button:not([disabled]):not([hidden])"
+      )
+    ].filter(button => button.getClientRects().length);
 
     if (!focusable.length) return;
 
@@ -362,6 +487,7 @@ document.addEventListener("keydown", event => {
   }
 });
 
-// ブラウザの状態にかかわらず初期表示は閉じる
 overlay.hidden = true;
-setPreviewButtons(false);
+skipButton.hidden = true;
+
+setupGachaSound();
