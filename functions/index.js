@@ -133,8 +133,17 @@ exports.initializePlayerCoins = onCall(
       const result = await db.runTransaction(
         async tx => {
           // READ PHASE
-          const userSnap = await tx.get(userRef);
-          const grantSnap = await tx.get(grantRef);
+          
+const userSnap = await tx.get(userRef);
+const gachaSnap = await tx.get(gachaRef);
+
+const initialGrantRef = db.doc(
+  `coinGrantLogs/initial_${uid}`
+);
+
+const initialGrantSnap =
+  await tx.get(initialGrantRef);
+
 
           if (!userSnap.exists) {
             fail(
@@ -462,12 +471,27 @@ exports.drawGacha = onCall(
           const user = userSnap.data();
           const gacha = gachaSnap.data();
 
-          if (
-            user.initialCoinsGranted !== true ||
-            !validCoins(user.coins)
-          ) {
-            fail("コイン初期化が必要です。");
-          }
+          
+if (
+  user.initialCoinsGranted !== true ||
+  !validCoins(user.coins) ||
+  !initialGrantSnap.exists
+) {
+  fail("コイン初期化が必要です。");
+}
+
+const initialGrant = initialGrantSnap.data();
+
+if (
+  initialGrant.uid !== uid ||
+  initialGrant.reason !== "INITIAL_BONUS" ||
+  initialGrant.amount !== INITIAL_COINS
+) {
+  fail(
+    "初期コイン配布履歴に不整合があります。"
+  );
+}
+
 
           if (gacha.enabled !== true) {
             fail("このガチャは公開されていません。");
