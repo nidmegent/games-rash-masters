@@ -333,54 +333,52 @@
 
 
 /* ==========================================
-   STEP 4-D FIX
-   MOBILE HEADER / SKIP VISIBILITY
+   STEP 4-D FIX V2
+   MOBILE SCROLL AND STICKY HEADER
 ========================================== */
 
-/* 演出画面のスクロール領域 */
-.summon-stage {
-  position: relative;
-  isolation: isolate;
-}
-
-/* PREVIEWとSKIPを常に手前に表示 */
+/* 共通：ヘッダーを最前面にする */
 .summon-stage .summon-topline {
-  position: sticky !important;
+  position: sticky;
   top: 0;
-  left: 0;
-  z-index: 100 !important;
+  left: auto;
+  right: auto;
+  z-index: 100;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 
   width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 
-  border: 1px solid rgba(174, 145, 255, .25);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+
+  border: 1px solid rgba(174, 145, 255, .3);
   border-radius: 10px;
 
-  background: rgba(12, 9, 29, .96);
+  background: rgba(12, 9, 29, .97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* ラベル */
+/* PREVIEWラベル */
 .summon-stage .summon-mode {
-  position: static !important;
+  position: static;
   color: #f2cc76;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: .5px;
   white-space: nowrap;
 }
 
 /* SKIPボタン */
 .summon-stage .summon-skip {
-  position: static !important;
-  z-index: 101 !important;
+  position: static;
+  z-index: 101;
   flex-shrink: 0;
 
   display: inline-flex;
@@ -388,7 +386,7 @@
   justify-content: center;
 
   min-height: 38px;
-  padding: 8px 15px;
+  padding: 8px 14px;
 
   border: 1px solid rgba(255, 215, 110, .65);
   border-radius: 8px;
@@ -399,40 +397,162 @@
   font-weight: 800;
 }
 
-/* 10連結果がヘッダーに重ならないようにする */
+/* hidden属性を優先 */
+.summon-stage .summon-skip[hidden] {
+  display: none !important;
+}
+
+/* 結果画面はヘッダーより下 */
 .summon-stage .summon-result-grid,
 .summon-stage .finish-summary-info {
   position: relative;
   z-index: 1;
 }
 
-/* スマホ最適化 */
+/* ==========================================
+   MOBILE: 画面上部から配置
+========================================== */
+
 @media (max-width: 600px) {
-  .summon-stage {
-    max-height: 94dvh;
+
+  /* オーバーレイを画面内に固定 */
+  .summon-overlay {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+
+    height: 100vh;
+    height: 100dvh;
+
+    box-sizing: border-box;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      10px
+      max(8px, env(safe-area-inset-bottom));
+
+    overflow: hidden;
+  }
+
+  /* 重要：
+     中央寄せを解除して、
+     スクロールの先頭を必ず表示する */
+  .summon-overlay .summon-stage {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+
+    flex: 1 1 auto;
+
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+
+    box-sizing: border-box;
+    padding: 0 6px 24px;
+
     overflow-x: hidden;
     overflow-y: auto;
+
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    isolation: isolate;
   }
 
-  .summon-stage .summon-topline {
+  /* ヘッダーをスクロール上部に固定 */
+  .summon-overlay .summon-stage .summon-topline {
+    position: sticky;
     top: 0;
-    padding: 10px 12px;
-    margin-bottom: 18px;
+    left: auto;
+    right: auto;
+
+    z-index: 100;
+
+    width: 100%;
+    min-height: 52px;
+    flex-shrink: 0;
+
+    margin: 0 0 18px;
+    padding: 9px 10px;
+
+    background: rgba(12, 9, 29, .98);
   }
 
-  .summon-stage .summon-mode {
+  .summon-overlay .summon-mode {
     font-size: 10px;
-    letter-spacing: .4px;
+    letter-spacing: .2px;
   }
 
-  .summon-stage .summon-skip {
+  .summon-overlay .summon-skip {
     min-height: 36px;
     padding: 7px 12px;
   }
+
+  /* タイトルがヘッダーに重ならない */
+  .summon-overlay .summon-stage-title {
+    width: 100%;
+    margin: 14px 0 10px;
+    font-size: clamp(19px, 5vw, 28px);
+    letter-spacing: 1px;
+    overflow-wrap: anywhere;
+  }
+
+  /* 10連結果の配置 */
+  .summon-overlay .summon-result-grid {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+    margin: 14px 0;
+  }
+
+  .summon-overlay .finish-summary-info {
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  /* 結果画面の終了ボタン */
+  .summon-overlay .summon-next-button {
+    flex-shrink: 0;
+    margin-bottom: 20px;
+  }
+
+  /* 魔法陣・カードめくりも維持 */
+  .summon-overlay .summon-circle {
+    flex-shrink: 0;
+  }
+
+  .summon-overlay .summon-reveal {
+    flex-shrink: 0;
+  }
+
 }
 
-/* hidden属性を尊重 */
-.summon-stage .summon-skip[hidden] {
-  display: none !important;
+/* 小さいスマホ向け */
+@media (max-width: 375px) {
+
+  .summon-overlay .summon-mode {
+    font-size: 9px;
+  }
+
+  .summon-overlay .summon-skip {
+    padding: 7px 10px;
+  }
+
+  .summon-overlay .summon-result-grid {
+    gap: 6px;
+  }
+
 }
