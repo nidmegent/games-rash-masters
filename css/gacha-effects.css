@@ -372,3 +372,75 @@
     animation: none !important;
   }
 }
+
+
+/* =========================================
+   STEP 4-B SOUND SETTINGS
+========================================= */
+
+.gacha-sound-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid rgba(174, 145, 255, .25);
+  border-radius: 14px;
+  background: rgba(5, 5, 18, .45);
+}
+
+.gacha-sound-controls > strong {
+  width: 100%;
+  color: #f2cc76;
+  font: 700 12px Orbitron, sans-serif;
+  letter-spacing: 1px;
+}
+
+.gacha-sound-controls button {
+  padding: 10px 15px;
+  border: 1px solid rgba(174, 145, 255, .5);
+  border-radius: 9px;
+  color: #f5f2ff;
+  background: #27213f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gacha-sound-controls button:hover:not(:disabled) {
+  border-color: #4de8ff;
+}
+
+.gacha-sound-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.gacha-sound-controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #aaa6bf;
+  font-size: 12px;
+}
+
+.gacha-sound-controls input[type="range"] {
+  width: min(170px, 40vw);
+  accent-color: #9b6cff;
+}
+
+@media (max-width: 600px) {
+  .gacha-sound-controls {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .gacha-sound-controls button {
+    flex: 1;
+  }
+
+  .gacha-sound-controls label {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
