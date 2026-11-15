@@ -330,3 +330,109 @@
     display: none;
   }
 }
+
+
+/* ==========================================
+   STEP 4-D FIX
+   MOBILE HEADER / SKIP VISIBILITY
+========================================== */
+
+/* 演出画面のスクロール領域 */
+.summon-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+/* PREVIEWとSKIPを常に手前に表示 */
+.summon-stage .summon-topline {
+  position: sticky !important;
+  top: 0;
+  left: 0;
+  z-index: 100 !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+
+  border: 1px solid rgba(174, 145, 255, .25);
+  border-radius: 10px;
+
+  background: rgba(12, 9, 29, .96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ラベル */
+.summon-stage .summon-mode {
+  position: static !important;
+  color: #f2cc76;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* SKIPボタン */
+.summon-stage .summon-skip {
+  position: static !important;
+  z-index: 101 !important;
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 8px 15px;
+
+  border: 1px solid rgba(255, 215, 110, .65);
+  border-radius: 8px;
+
+  background: #30223f;
+  color: #ffe28a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* 10連結果がヘッダーに重ならないようにする */
+.summon-stage .summon-result-grid,
+.summon-stage .finish-summary-info {
+  position: relative;
+  z-index: 1;
+}
+
+/* スマホ最適化 */
+@media (max-width: 600px) {
+  .summon-stage {
+    max-height: 94dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .summon-stage .summon-topline {
+    top: 0;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+  }
+
+  .summon-stage .summon-mode {
+    font-size: 10px;
+    letter-spacing: .4px;
+  }
+
+  .summon-stage .summon-skip {
+    min-height: 36px;
+    padding: 7px 12px;
+  }
+}
+
+/* hidden属性を尊重 */
+.summon-stage .summon-skip[hidden] {
+  display: none !important;
+}
