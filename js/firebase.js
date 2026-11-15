@@ -45,7 +45,7 @@ const app = initializeApp(firebaseConfig);
 
 // Google Cloudで作成したサイトキーに置き換える
 const RECAPTCHA_ENTERPRISE_SITE_KEY =
-  "6LcJxCAuAAAAACzXbHwGvQ8ynWd9HE-1CrlNxYVl";
+  "6Leh7iAuAAAAAIwiaBzbemI5_Q2_7snsuR_B3dXz";
 
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider(
