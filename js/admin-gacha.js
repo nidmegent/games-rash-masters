@@ -611,3 +611,184 @@ onAuthStateChanged(auth, async user => {
       "管理画面の読み込みに失敗しました：" + error.message;
   }
 });
+
+
+/* ========================================
+   COIN MANAGEMENT
+   運営専用コイン付与
+======================================== */
+
+const COIN_GRANT_API =
+  "https://rash-masters-gacha.lgs-esportsgames.workers.dev/admin/coins/grant";
+
+let coinGrantSending = false;
+let pendingCoinGrant = null;
+
+const coinGrantForm = $("coinGrantForm");
+const coinGrantButton = $("coinGrantButton");
+const coinGrantMessage = $("coinGrantMessage");
+
+function showCoinGrantMessage(message, isError = false) {
+  coinGrantMessage.textContent = message;
+  coinGrantMessage.style.color =
+    isError ? "#ff6483" : "#4de8ff";
+}
+
+function clearPendingCoinGrant() {
+  pendingCoinGrant = null;
+  coinGrantForm.reset();
+  $("coinAmount").value = "100";
+}
+
+coinGrantForm.addEventListener("input", () => {
+  // 入力内容を変更したら、新しい付与操作として扱う
+  pendingCoinGrant = null;
+  showCoinGrantMessage("");
+});
+
+coinGrantForm.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (coinGrantSending) return;
+
+  if (!currentUser || !isSuperAdmin(currentUser)) {
+    showCoinGrantMessage(
+      "運営権限がありません。",
+      true
+    );
+    return;
+  }
+
+  const targetUid = $("coinTargetUid").value.trim();
+  const amount = Number($("coinAmount").value);
+  const reason = $("coinReason").value.trim();
+
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(targetUid)) {
+    showCoinGrantMessage(
+      "正しいプレイヤーUIDを入力してください。",
+      true
+    );
+    return;
+  }
+
+  if (
+    !Number.isSafeInteger(amount) ||
+    amount < 1 ||
+    amount > 100000
+  ) {
+    showCoinGrantMessage(
+      "付与数は1〜100000の整数で指定してください。",
+      true
+    );
+    return;
+  }
+
+  if (!reason || reason.length > 200) {
+    showCoinGrantMessage(
+      "付与理由を1〜200文字で入力してください。",
+      true
+    );
+    return;
+  }
+
+  const payload = {
+    targetUid,
+    amount,
+    reason
+  };
+
+  // 通信エラー後は同じrequestIdを再利用する
+  if (
+    !pendingCoinGrant ||
+    pendingCoinGrant.targetUid !== targetUid ||
+    pendingCoinGrant.amount !== amount ||
+    pendingCoinGrant.reason !== reason
+  ) {
+    pendingCoinGrant = {
+      ...payload,
+      requestId: crypto.randomUUID()
+    };
+  }
+
+  const requestId = pendingCoinGrant.requestId;
+
+  const confirmed = confirm(
+    "以下の内容でコインを付与しますか？\n\n" +
+    `付与先UID：${targetUid}\n` +
+    `付与数：${amount}コイン\n` +
+    `理由：${reason}`
+  );
+
+  if (!confirmed) return;
+
+  coinGrantSending = true;
+  coinGrantButton.disabled = true;
+  coinGrantButton.textContent = "付与処理中...";
+
+  showCoinGrantMessage("サーバーに送信しています...");
+
+  try {
+    const token = await currentUser.getIdToken();
+
+    const response = await fetch(COIN_GRANT_API, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(pendingCoinGrant)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      if (response.status === 403) {
+        throw new Error(
+          "このアカウントにはWorker側の付与権限がありません。"
+        );
+      }
+
+      if (result.error === "user_not_found") {
+        throw new Error(
+          "指定したプレイヤーが見つかりません。"
+        );
+      }
+
+      if (result.error === "invalid_grant_request") {
+        throw new Error(
+          "付与内容が正しくありません。"
+        );
+      }
+
+      throw new Error(
+        `付与結果を確認してください：${result.error || response.status}`
+      );
+    }
+
+    const replayed = result.replayed === true;
+
+    const message =
+      (replayed
+        ? "以前の付与結果を確認しました。"
+        : "コインを付与しました！") +
+      ` 付与数：${result.amount} / ` +
+      `付与時の残高：${result.remainingCoins}`;
+
+    clearPendingCoinGrant();
+    showCoinGrantMessage(message);
+
+  } catch (error) {
+    console.error("Coin grant error:", error);
+
+    showCoinGrantMessage(
+      error.message +
+      " 通信エラーの場合は、Firestoreの付与履歴を確認してください。",
+      true
+    );
+
+  } finally {
+    coinGrantSending = false;
+    coinGrantButton.disabled = false;
+    coinGrantButton.textContent = "🪙 コインを付与する";
+  }
+});
