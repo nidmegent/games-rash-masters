@@ -444,3 +444,313 @@
     justify-content: space-between;
   }
 }
+
+
+/* ==========================================
+   RASH MASTERS STEP 4-C
+   SPECIAL RARITY + CARD FLIP
+========================================== */
+
+/* UR: 虹色の魔法陣 */
+.summon-circle-UR {
+  border-color: #ffdf70;
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(255, 80, 150, .15),
+      rgba(255, 220, 80, .2),
+      rgba(75, 225, 255, .2),
+      rgba(170, 100, 255, .2),
+      rgba(255, 80, 150, .15)
+    );
+  box-shadow:
+    0 0 35px rgba(255, 190, 75, .75),
+    0 0 90px rgba(170, 90, 255, .45),
+    inset 0 0 55px rgba(255, 215, 90, .3);
+  animation:
+    summon-rotate 4s linear infinite,
+    rash-ur-glow 1.6s ease-in-out infinite alternate;
+}
+
+/* SSR: 黄金の魔法陣 */
+.summon-circle-SSR {
+  border-color: #ffcf65;
+  background: radial-gradient(
+    circle,
+    rgba(255, 198, 75, .22),
+    transparent 70%
+  );
+  box-shadow:
+    0 0 35px rgba(255, 200, 80, .75),
+    inset 0 0 50px rgba(255, 175, 60, .35);
+}
+
+/* カードをめくるステージ */
+.summon-flip-scene {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summon-flip-card {
+  display: block;
+  width: min(66vw, 270px);
+  height: 370px;
+  margin: 18px auto;
+  padding: 0;
+  border: 0;
+  border-radius: 17px;
+  background: transparent;
+  cursor: pointer;
+  perspective: 1200px;
+  color: white;
+}
+
+.summon-flip-card:focus-visible {
+  outline: 3px solid #4de8ff;
+  outline-offset: 6px;
+}
+
+.summon-flip-card:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.summon-flip-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .85s cubic-bezier(.2,.7,.2,1);
+}
+
+.summon-flip-card.is-flipped .summon-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.summon-flip-back,
+.summon-flip-front {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 17px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.summon-flip-back {
+  border: 2px solid #9b6cff;
+  background:
+    radial-gradient(
+      circle,
+      rgba(150, 95, 255, .35),
+      transparent 65%
+    ),
+    repeating-linear-gradient(
+      45deg,
+      #18132e,
+      #18132e 12px,
+      #211a3d 12px,
+      #211a3d 24px
+    );
+  box-shadow:
+    0 0 25px rgba(155,108,255,.5),
+    inset 0 0 35px rgba(155,108,255,.2);
+}
+
+.summon-back-symbol {
+  font-size: 110px;
+  color: #e6d5ff;
+  text-shadow:
+    0 0 15px #9b6cff,
+    0 0 45px #9b6cff;
+  animation: summon-pulse 1.2s ease-in-out infinite alternate;
+}
+
+.summon-back-label {
+  margin-top: 18px;
+  color: #f2cc76;
+  font: 800 13px Orbitron, sans-serif;
+  letter-spacing: 2px;
+}
+
+.summon-flip-front {
+  transform: rotateY(180deg);
+}
+
+.summon-flip-front .summon-reveal-card {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.summon-flip-front .summon-reveal-card img {
+  max-height: 270px;
+  min-height: 0;
+}
+
+.summon-flip-front .placeholder-art {
+  min-height: 190px;
+}
+
+/* URのカード公開 */
+.summon-revealed-UR .summon-flip-card {
+  filter:
+    drop-shadow(0 0 18px rgba(255,215,90,.8))
+    drop-shadow(0 0 35px rgba(155,108,255,.65));
+}
+
+.summon-revealed-UR .summon-stage-title {
+  color: #ffe28a;
+  text-shadow:
+    0 0 18px rgba(255,215,90,.8),
+    0 0 35px rgba(180,90,255,.6);
+}
+
+/* SSRのカード公開 */
+.summon-revealed-SSR .summon-flip-card {
+  filter: drop-shadow(
+    0 0 25px rgba(255,185,92,.75)
+  );
+}
+
+.summon-revealed-SSR .summon-stage-title {
+  color: #ffcf70;
+  text-shadow: 0 0 25px rgba(255,180,70,.65);
+}
+
+/* 公開時のフラッシュ */
+.summon-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(255,245,205,.8);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.summon-flash.flash-active {
+  animation: rash-reveal-flash .55s ease-out both;
+}
+
+/* 10連結果の強調 */
+.summon-result-grid {
+  align-items: stretch;
+}
+
+.summon-result-item {
+  animation: rash-result-enter .4s ease-out both;
+  animation-delay: calc(var(--card-order, 0) * 65ms);
+}
+
+.summon-result-item.summon-rarity-UR {
+  border: 2px solid #ffe27b;
+  box-shadow:
+    0 0 16px rgba(255,220,90,.55),
+    0 0 30px rgba(160,100,255,.3);
+  background:
+    linear-gradient(135deg,#35264f,#423519,#17324d);
+}
+
+.summon-result-item.summon-rarity-SSR {
+  border: 2px solid #ffc76b;
+  box-shadow: 0 0 18px rgba(255,180,70,.45);
+  background: linear-gradient(135deg,#342716,#181425);
+}
+
+.summon-result-item.summon-rarity-SR {
+  border-color: #b58aff;
+}
+
+.summon-summary-UR {
+  color: #ffe28a;
+  text-shadow: 0 0 24px rgba(255,210,100,.7);
+}
+
+.summon-summary-SSR {
+  color: #ffcb7b;
+  text-shadow: 0 0 20px rgba(255,180,70,.5);
+}
+
+.summon-result-UR {
+  padding: 12px;
+  border: 1px solid rgba(255,215,110,.4);
+  border-radius: 14px;
+  background: rgba(255,215,110,.035);
+}
+
+@keyframes rash-ur-glow {
+  from {
+    box-shadow:
+      0 0 25px rgba(255,190,75,.6),
+      0 0 50px rgba(170,90,255,.3);
+  }
+  to {
+    box-shadow:
+      0 0 55px rgba(255,210,100,.95),
+      0 0 100px rgba(75,225,255,.5);
+  }
+}
+
+@keyframes rash-reveal-flash {
+  0% { opacity: 0; }
+  20% { opacity: .75; }
+  100% { opacity: 0; }
+}
+
+@keyframes rash-result-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .summon-flip-card {
+    width: min(70vw, 240px);
+    height: 325px;
+  }
+
+  .summon-back-symbol {
+    font-size: 85px;
+  }
+
+  .summon-flip-front .summon-reveal-card img {
+    max-height: 220px;
+  }
+
+  .summon-result-item img {
+    height: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summon-circle-UR,
+  .summon-back-symbol,
+  .summon-result-item {
+    animation: none !important;
+  }
+
+  .summon-flip-inner {
+    transition: none !important;
+  }
+
+  .summon-flash.flash-active {
+    animation: none !important;
+  }
+}
