@@ -134,16 +134,9 @@ exports.initializePlayerCoins = onCall(
         async tx => {
           // READ PHASE
           
+
 const userSnap = await tx.get(userRef);
-const gachaSnap = await tx.get(gachaRef);
-
-const initialGrantRef = db.doc(
-  `coinGrantLogs/initial_${uid}`
-);
-
-const initialGrantSnap =
-  await tx.get(initialGrantRef);
-
+const grantSnap = await tx.get(grantRef);
 
           if (!userSnap.exists) {
             fail(
@@ -457,8 +450,18 @@ exports.drawGacha = onCall(
           // READ: USER AND BANNER
           // ==================================
 
-          const userSnap = await tx.get(userRef);
-          const gachaSnap = await tx.get(gachaRef);
+          
+const userSnap = await tx.get(userRef);
+const gachaSnap = await tx.get(gachaRef);
+
+const initialGrantRef = db.doc(
+  `coinGrantLogs/initial_${uid}`
+);
+
+const initialGrantSnap = await tx.get(
+  initialGrantRef
+);
+
 
           if (!userSnap.exists) {
             fail("プレイヤーが見つかりません。");
