@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090914">
+  <title>GACHA | RASH MASTERS</title>
+  <link rel="stylesheet" href="css/gacha-play.css">
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="home.html">
+      RASH <span>MASTERS</span>
+    </a>
+    <a class="home-link" href="home.html">⌂ HOME</a>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">RASH MASTERS / SUMMON</div>
+      <h1>GACHA <span>SUMMON</span></h1>
+      <p>新たなカードとの出会いが、戦いを変える。</p>
+      <div class="preview-label">PREVIEW MODE</div>
+    </section>
+
+    <div id="statusMessage" class="status-message" role="status">
+      ログイン状態を確認しています...
+    </div>
+
+    <section id="playerArea" class="player-area" hidden>
+      <div class="player-box">
+        <span>PLAYER</span>
+        <strong id="playerName">---</strong>
+      </div>
+      <div class="player-box">
+        <span>COINS</span>
+        <strong id="coinBalance">未連携</strong>
+      </div>
+    </section>
+
+    <section id="gachaArea" hidden>
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">AVAILABLE BANNERS</span>
+          <h2>開催中のガチャ</h2>
+        </div>
+        <button id="refreshButton" class="outline-button">
+          ↻ 更新
+        </button>
+      </div>
+
+      <div id="gachaList" class="gacha-list"></div>
+    </section>
+
+    <section id="detailArea" class="detail-panel" hidden>
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">GACHA DETAILS</span>
+          <h2 id="detailName">ガチャ詳細</h2>
+        </div>
+        <button id="closeDetail" class="outline-button">
+          閉じる
+        </button>
+      </div>
+
+      <p id="detailDescription" class="detail-description"></p>
+
+      <div class="rates-heading">
+        <h3>RARITY RATES</h3>
+        <span>排出確率</span>
+      </div>
+      <div id="rateList" class="rate-list"></div>
+
+      <div class="rates-heading">
+        <h3>CARD POOL</h3>
+        <span id="poolCount">0 CARDS</span>
+      </div>
+      <div id="cardPool" class="card-grid"></div>
+
+      <div class="summon-actions">
+        <button id="singleButton" class="summon-button">
+          <span>1回召喚</span>
+          <strong id="singlePrice">0 COINS</strong>
+        </button>
+
+        <button id="tenButton" class="summon-button ten-button">
+          <span>10連召喚</span>
+          <strong id="tenPrice">0 COINS</strong>
+        </button>
+      </div>
+
+      <p class="preview-note">
+        ※ 現在はプレビュー版です。抽選・コイン消費・カード付与は
+        まだ実行されません。
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="js/gacha-play.js"></script>
+</body>
+</html>
