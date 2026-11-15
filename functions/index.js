@@ -583,6 +583,51 @@ exports.drawGacha = onCall(
             );
           }
 
+          
+          // ==================================
+          // OWNED CARDS - READ PHASE
+          // ==================================
+
+          const ownedUpdates = [];
+
+          for (const [cardId, quantity] of quantities) {
+            const ownedRef = db.doc(
+              `users/${uid}/ownedCards/${cardId}`
+            );
+
+            const ownedSnapshot =
+              await transaction.get(ownedRef);
+
+            const oldQuantity = ownedSnapshot.exists
+              ? ownedSnapshot.data().quantity
+              : 0;
+
+            if (
+              !Number.isSafeInteger(oldQuantity) ||
+              oldQuantity < 0 ||
+              oldQuantity + quantity > 999999
+            ) {
+              throw new HttpsError(
+                "failed-precondition",
+                "所持カードの枚数が不正、" +
+                "または上限に達しています。"
+              );
+            }
+
+            const card = cards.find(
+              item => item.cardId === cardId
+            );
+
+            ownedUpdates.push({
+              ref: ownedRef,
+              cardId,
+              cardName: card.name,
+              rarity: card.rarity,
+              quantity: oldQuantity + quantity
+            });
+          }
+
+
           const remainingCoins =
             userData.coins - cost;
 
@@ -594,17 +639,16 @@ exports.drawGacha = onCall(
             coins: remainingCoins
           });
 
-          for (const [cardId, quantity] of quantities) {
-            const ownedRef = db.doc(
-              `users/${uid}/ownedCards/${cardId}`
-            );
-
+          
+          for (const item of ownedUpdates) {
             transaction.set(
-              ownedRef,
+              item.ref,
               {
-                quantity: FieldValue.increment(
-                  quantity
-                )
+                cardId: item.cardId,
+                cardName: item.cardName,
+                rarity: item.rarity,
+                quantity: item.quantity,
+                updatedAt: FieldValue.serverTimestamp()
               },
               { merge: true }
             );
