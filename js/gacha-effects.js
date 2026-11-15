@@ -77,6 +77,7 @@ function makeTopline() {
     "RASH MASTERS / DEMO"
   );
 
+  skipButton.hidden = false;
   top.append(label, skipButton);
   stage.append(top);
 }
@@ -266,6 +267,8 @@ function closePreview() {
   cards = [];
   currentIndex = 0;
 
+  skipButton.hidden = true;
+  
   overlay.hidden = true;
   stage.replaceChildren();
 
