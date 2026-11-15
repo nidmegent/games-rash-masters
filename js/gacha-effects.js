@@ -1,8 +1,10 @@
 
 "use strict";
 
-// RASH MASTERS - GACHA EFFECTS STEP 4-B
-// VISUAL & SOUND PREVIEW ONLY
+// ==========================================
+// RASH MASTERS - GACHA EFFECTS STEP 4-C
+// PREVIEW ONLY / NO COIN OR CARD WRITES
+// ==========================================
 
 import { auth, db } from "./firebase.js";
 
@@ -52,6 +54,7 @@ let phase = "idle";
 let timer = null;
 let previousFocus = null;
 let previousOverflow = "";
+let revealed = false;
 
 function element(tag, className = "", value) {
   const node = document.createElement(tag);
@@ -62,6 +65,12 @@ function element(tag, className = "", value) {
   }
 
   return node;
+}
+
+function rarityOf(card) {
+  return RARITIES.includes(card?.rarity)
+    ? card.rarity
+    : "N";
 }
 
 function clearTimer() {
@@ -79,15 +88,14 @@ function safeImageUrl(path) {
     return "";
   }
 
-  return new URL(
-    `../${path}`,
-    import.meta.url
-  ).href;
+  return new URL(`../${path}`, import.meta.url).href;
 }
 
+// ------------------------------------------
+// プレビュー用カード読み込み
+// ------------------------------------------
+
 async function loadPreviewCards(count) {
-  // Firestoreから読み取りのみ行う。
-  // ガチャ抽選やカード付与は行わない。
   if (!auth.currentUser) {
     return DEMO_CARDS.slice(0, count);
   }
@@ -99,8 +107,8 @@ async function loadPreviewCards(count) {
 
     const registered = snapshot.docs
       .map(item => ({
-        cardId: item.id,
-        ...item.data()
+        ...item.data(),
+        cardId: item.id
       }))
       .filter(card =>
         RARITIES.includes(card.rarity) &&
@@ -112,25 +120,19 @@ async function loadPreviewCards(count) {
       return DEMO_CARDS.slice(0, count);
     }
 
-    // 演出確認用にレアリティ順で並べる。
-    // 実際のガチャ排出率は使用しない。
+    // 演出テストのため高レアリティも確認できる順序。
+    // 排出確率に基づく抽選ではありません。
     registered.sort((a, b) =>
       RARITIES.indexOf(a.rarity) -
       RARITIES.indexOf(b.rarity)
     );
 
     if (count === 1) {
-      // UR → SSR → その他の優先順で
-      // 演出確認用カードを1枚選ぶ。
-      const selected = [...registered].sort(
-        (a, b) =>
-          RARITIES.indexOf(b.rarity) -
-          RARITIES.indexOf(a.rarity)
-      );
-
-      return [selected[0]];
+      return [registered[registered.length - 1]];
     }
 
+    // レアリティが偏っていても
+    // 登録カードを最大10枚表示する。
     const result = [];
 
     for (let i = 0; i < count; i++) {
@@ -140,27 +142,24 @@ async function loadPreviewCards(count) {
     }
 
     return result;
-
   } catch (error) {
-    console.warn(
-      "Preview cards unavailable:",
-      error
-    );
-
+    console.warn("Preview card load:", error);
     return DEMO_CARDS.slice(0, count);
   }
 }
 
-function makeCard(card, compact = false) {
-  const rarity = RARITIES.includes(card.rarity)
-    ? card.rarity
-    : "N";
+// ------------------------------------------
+// カードの見た目
+// ------------------------------------------
+
+function makeCardFace(card, compact = false) {
+  const rarity = rarityOf(card);
 
   const article = element(
     "article",
     compact
       ? `summon-result-item summon-rarity-${rarity}`
-      : "summon-reveal-card"
+      : `summon-reveal-card summon-rarity-${rarity}`
   );
 
   const imageUrl = safeImageUrl(card.imagePath);
@@ -192,6 +191,53 @@ function makeCard(card, compact = false) {
   return article;
 }
 
+function makeFlipCard(card, onReveal) {
+  const rarity = rarityOf(card);
+
+  const button = element(
+    "button",
+    `summon-flip-card summon-rarity-${rarity}`
+  );
+
+  button.type = "button";
+  button.setAttribute(
+    "aria-label",
+    "カードをめくって公開"
+  );
+
+  const inner = element("span", "summon-flip-inner");
+
+  const back = element("span", "summon-flip-back");
+  back.append(
+    element("span", "summon-back-symbol", "✦"),
+    element("span", "summon-back-label", "RASH MASTERS")
+  );
+
+  const front = element("span", "summon-flip-front");
+  front.append(makeCardFace(card));
+
+  inner.append(back, front);
+  button.append(inner);
+
+  button.addEventListener("click", () => {
+    if (revealed || !active) return;
+
+    revealed = true;
+    button.classList.add("is-flipped");
+    button.disabled = true;
+
+    // 公開直後に音とレアリティ演出を発動
+    playCardReveal(rarity);
+    onReveal(rarity);
+  });
+
+  return button;
+}
+
+// ------------------------------------------
+// 演出画面
+// ------------------------------------------
+
 function clearStage() {
   clearTimer();
   stage.replaceChildren();
@@ -218,7 +264,18 @@ function showCircle() {
   clearStage();
   makeTopline();
 
-  const circle = element("div", "summon-circle");
+  // 10連では最高レアリティに合わせて魔法陣を変える
+  const highest = cards.reduce((best, card) => {
+    return RARITIES.indexOf(rarityOf(card)) >
+      RARITIES.indexOf(best)
+      ? rarityOf(card)
+      : best;
+  }, "N");
+
+  const circle = element(
+    "div",
+    `summon-circle summon-circle-${highest}`
+  );
 
   circle.append(
     element("div", "summon-symbol", "✦")
@@ -234,7 +291,7 @@ function showCircle() {
     element(
       "p",
       "summon-stage-message",
-      "魔力が集まり、運命のカードが目覚める..."
+      "運命のカードが、今目覚める..."
     )
   );
 
@@ -242,7 +299,7 @@ function showCircle() {
 
   timer = setTimeout(
     () => showReveal(0),
-    reduceMotion.matches ? 150 : 1700
+    reduceMotion.matches ? 100 : 1800
   );
 }
 
@@ -251,32 +308,26 @@ function showReveal(index) {
 
   clearStage();
   phase = "reveal";
+  revealed = false;
   makeTopline();
 
   const card = cards[index];
-  const rarity = RARITIES.includes(card.rarity)
-    ? card.rarity
-    : "N";
 
   const wrap = element(
     "div",
-    `summon-reveal summon-rarity-${rarity}`
+    "summon-reveal summon-flip-scene"
   );
 
   const heading = element(
     "h2",
     "summon-stage-title",
-    rarity === "UR"
-      ? "LEGENDARY!"
-      : rarity === "SSR"
-        ? "SUPER RARE!"
-        : "CARD REVEAL"
+    "CARD REVEAL"
   );
 
-  const rarityText = element(
-    "div",
-    "summon-rarity",
-    rarity
+  const hint = element(
+    "p",
+    "summon-stage-message",
+    "カードをタップして公開！"
   );
 
   const progress = element(
@@ -294,8 +345,44 @@ function showReveal(index) {
   );
 
   next.type = "button";
+  next.hidden = true;
+
+  const flash = element("div", "summon-flash");
+  flash.setAttribute("aria-hidden", "true");
+
+  const flipCard = makeFlipCard(card, rarity => {
+    hint.textContent =
+      rarity === "UR"
+        ? "LEGENDARY! URカード登場！"
+        : rarity === "SSR"
+          ? "SUPER RARE! SSRカード登場！"
+          : `${rarity}カードが現れた！`;
+
+    heading.textContent =
+      rarity === "UR"
+        ? "LEGENDARY!"
+        : rarity === "SSR"
+          ? "SUPER RARE!"
+          : "CARD REVEALED";
+
+    wrap.classList.add(
+      `summon-revealed-${rarity}`
+    );
+
+    if (!reduceMotion.matches &&
+        (rarity === "UR" || rarity === "SSR")) {
+      flash.classList.remove("flash-active");
+      void flash.offsetWidth;
+      flash.classList.add("flash-active");
+    }
+
+    next.hidden = false;
+    next.focus();
+  });
 
   next.addEventListener("click", () => {
+    if (!revealed) return;
+
     if (index === cards.length - 1) {
       showSummary();
     } else {
@@ -305,16 +392,15 @@ function showReveal(index) {
 
   wrap.append(
     heading,
-    makeCard(card),
-    rarityText,
+    hint,
+    flipCard,
     progress,
-    next
+    next,
+    flash
   );
 
   stage.append(wrap);
-
-  playCardReveal(rarity);
-  next.focus();
+  flipCard.focus();
 }
 
 function showSummary() {
@@ -324,9 +410,16 @@ function showSummary() {
   phase = "summary";
   makeTopline();
 
+  const highest = cards.reduce((best, card) => {
+    return RARITIES.indexOf(rarityOf(card)) >
+      RARITIES.indexOf(best)
+      ? rarityOf(card)
+      : best;
+  }, "N");
+
   const heading = element(
     "h2",
-    "summon-stage-title",
+    `summon-stage-title summon-summary-${highest}`,
     cards.length === 10
       ? "10 SUMMON RESULTS"
       : "SUMMON RESULT"
@@ -340,11 +433,16 @@ function showSummary() {
 
   const grid = element(
     "div",
-    "summon-result-grid"
+    `summon-result-grid summon-result-${highest}`
   );
 
-  cards.forEach(card => {
-    grid.append(makeCard(card, true));
+  cards.forEach((card, index) => {
+    const item = makeCardFace(card, true);
+    item.style.setProperty(
+      "--card-order",
+      String(index)
+    );
+    grid.append(item);
   });
 
   const close = element(
@@ -356,22 +454,22 @@ function showSummary() {
   close.type = "button";
   close.addEventListener("click", closePreview);
 
-  stage.append(
-    heading,
-    message,
-    grid,
-    close
-  );
+  stage.append(heading, message, grid, close);
 
   playSummarySound();
   close.focus();
 }
+
+// ------------------------------------------
+// 開始・終了・スキップ
+// ------------------------------------------
 
 function closePreview() {
   clearTimer();
 
   active = false;
   phase = "idle";
+  revealed = false;
   cards = [];
 
   skipButton.hidden = true;
@@ -417,7 +515,7 @@ async function startPreview(count) {
     cards = await loadPreviewCards(count);
 
     if (!cards.length) {
-      throw new Error("プレビューカードがありません。");
+      throw new Error("カードがありません。");
     }
 
     previousFocus = document.activeElement;
@@ -429,17 +527,20 @@ async function startPreview(count) {
 
     showCircle();
     skipButton.focus();
-
   } catch (error) {
     console.error("Preview error:", error);
-    alert("演出プレビューを開始できませんでした。");
+    alert("プレビューを開始できませんでした。");
+
     previewSingle.disabled = false;
     previewTen.disabled = false;
-
   } finally {
     loading = false;
   }
 }
+
+// ------------------------------------------
+// イベント
+// ------------------------------------------
 
 previewSingle.addEventListener("click", () => {
   startPreview(1);
@@ -464,7 +565,9 @@ document.addEventListener("keydown", event => {
       ...overlay.querySelectorAll(
         "button:not([disabled]):not([hidden])"
       )
-    ].filter(button => button.getClientRects().length);
+    ].filter(button =>
+      button.getClientRects().length
+    );
 
     if (!focusable.length) return;
 
