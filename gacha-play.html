@@ -22,10 +22,17 @@
       <div class="eyebrow">RASH MASTERS / SUMMON</div>
       <h1>GACHA <span>SUMMON</span></h1>
       <p>新たなカードとの出会いが、戦いを変える。</p>
-      <div class="preview-label">PREVIEW MODE</div>
+      <div class="preview-label" id="modeLabel">
+        PREVIEW MODE
+      </div>
     </section>
 
-    <div id="statusMessage" class="status-message" role="status">
+    <div
+      id="statusMessage"
+      class="status-message"
+      role="status"
+      aria-live="polite"
+    >
       ログイン状態を確認しています...
     </div>
 
@@ -36,7 +43,7 @@
       </div>
       <div class="player-box">
         <span>COINS</span>
-        <strong id="coinBalance">未連携</strong>
+        <strong id="coinBalance">確認中...</strong>
       </div>
     </section>
 
@@ -46,7 +53,11 @@
           <span class="eyebrow">AVAILABLE BANNERS</span>
           <h2>開催中のガチャ</h2>
         </div>
-        <button id="refreshButton" class="outline-button">
+        <button
+          id="refreshButton"
+          class="outline-button"
+          type="button"
+        >
           ↻ 更新
         </button>
       </div>
@@ -60,12 +71,19 @@
           <span class="eyebrow">GACHA DETAILS</span>
           <h2 id="detailName">ガチャ詳細</h2>
         </div>
-        <button id="closeDetail" class="outline-button">
+        <button
+          id="closeDetail"
+          class="outline-button"
+          type="button"
+        >
           閉じる
         </button>
       </div>
 
-      <p id="detailDescription" class="detail-description"></p>
+      <p
+        id="detailDescription"
+        class="detail-description"
+      ></p>
 
       <div class="rates-heading">
         <h3>RARITY RATES</h3>
@@ -80,21 +98,56 @@
       <div id="cardPool" class="card-grid"></div>
 
       <div class="summon-actions">
-        <button id="singleButton" class="summon-button">
+        <button
+          id="singleButton"
+          class="summon-button"
+          type="button"
+          disabled
+        >
           <span>1回召喚</span>
           <strong id="singlePrice">0 COINS</strong>
         </button>
 
-        <button id="tenButton" class="summon-button ten-button">
+        <button
+          id="tenButton"
+          class="summon-button ten-button"
+          type="button"
+          disabled
+        >
           <span>10連召喚</span>
           <strong id="tenPrice">0 COINS</strong>
         </button>
       </div>
 
-      <p class="preview-note">
-        ※ 現在はプレビュー版です。抽選・コイン消費・カード付与は
-        まだ実行されません。
+      <p class="preview-note" id="previewNote">
+        ※ 現在はプレビュー版です。
+        抽選・コイン消費・カード付与は実行されません。
       </p>
+    </section>
+
+    <!-- ガチャ結果 -->
+    <section
+      id="resultArea"
+      class="detail-panel"
+      hidden
+      aria-live="polite"
+    >
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">SUMMON RESULT</span>
+          <h2 id="resultTitle">召喚結果</h2>
+        </div>
+        <button
+          id="closeResult"
+          class="outline-button"
+          type="button"
+        >
+          閉じる
+        </button>
+      </div>
+
+      <p id="resultMessage" class="detail-description"></p>
+      <div id="resultCards" class="card-grid"></div>
     </section>
   </main>
 
