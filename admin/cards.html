@@ -3,194 +3,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#090914">
-  <title>ガチャ管理 | RASH MASTERS</title>
+  <title>カード管理 | RASH MASTERS</title>
   <link rel="stylesheet" href="../css/admin.css">
-  <link rel="icon" href="../favicon.ico">
-  <style>
-    [hidden] { display: none !important; }
-
-    .gacha-note {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.8;
-    }
-
-    .gacha-section {
-      margin: 25px 0;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
-    }
-
-    .gacha-section h3 {
-      font-size: 14px;
-      color: var(--cyan);
-      margin: 0 0 16px;
-    }
-
-    .rate-item {
-      display: grid;
-      grid-template-columns: 55px 1fr 90px;
-      gap: 10px;
-      align-items: center;
-      margin: 12px 0;
-    }
-
-    .rate-item input {
-      width: 100%;
-      min-width: 0;
-      padding: 10px;
-      background: #0c0c19;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-
-    .rate-bar {
-      height: 9px;
-      background: #29263b;
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .rate-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      width: 0;
-    }
-
-    .pool-tools {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .pool-tools input {
-      flex: 1;
-      min-width: 150px;
-      padding: 10px;
-      background: #0c0c19;
-      color: white;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-
-    .pool-list {
-      display: grid;
-      gap: 8px;
-      max-height: 350px;
-      overflow-y: auto;
-    }
-
-    .pool-card {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-      background: #0c0c19;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 12px;
-    }
-
-    .pool-card img {
-      width: 38px;
-      height: 50px;
-      object-fit: contain;
-    }
-
-    .pool-card input {
-      accent-color: var(--purple);
-    }
-
-    .pool-card span {
-      flex: 1;
-      overflow-wrap: anywhere;
-    }
-
-    .gacha-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 15px;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
-      background: #0c0c19;
-      border-radius: 10px;
-    }
-
-    .gacha-row strong {
-      display: block;
-      font-size: 13px;
-    }
-
-    .gacha-row small {
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .gacha-row button {
-      background: #25203b;
-      color: white;
-      border: 1px solid var(--border);
-      padding: 8px 12px;
-      border-radius: 7px;
-      cursor: pointer;
-    }
-
-    .gacha-row button:hover {
-      border-color: var(--purple);
-    }
-
-    .publish-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: white;
-      font-size: 13px;
-    }
-
-    .publish-label input {
-      accent-color: var(--cyan);
-      width: 17px;
-      height: 17px;
-    }
-
-    .danger-button {
-      padding: 12px 16px;
-      border: 1px solid var(--danger);
-      background: rgba(255,100,131,.12);
-      color: var(--danger);
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .danger-button:disabled {
-      opacity: .4;
-      cursor: not-allowed;
-    }
-
-    @media (max-width: 500px) {
-      .rate-item {
-        grid-template-columns: 40px 1fr 75px;
-      }
-      .gacha-row {
-        align-items: flex-start;
-      }
-    }
-  </style>
+  <link rel="icon" href="../favicon.ico" type="image/x-icon">
 </head>
 <body>
 
-  <div id="authLoading" class="loading">
-    管理者権限を確認しています...
-  </div>
-
-  <div id="adminContent" class="admin-layout" hidden>
-
+  <div class="admin-layout">
     <aside class="sidebar">
       <a class="brand" href="../home.html">
         <span class="brand-mark">R</span>
@@ -204,8 +25,7 @@
 
       <nav class="side-nav">
         <a href="../home.html">⌂ <span>プレイヤーホーム</span></a>
-        <a href="cards.html">▣ <span>カード管理</span></a>
-        <a href="gacha.html" class="active">✦ <span>ガチャ管理</span></a>
+        <a href="cards.html" class="active">▣ <span>カード管理</span></a>
       </nav>
 
       <div class="sidebar-bottom">
@@ -222,12 +42,9 @@
     <main class="main-content">
       <header class="topbar">
         <div>
-          <div class="eyebrow">
-            RASH MASTERS / ADMINISTRATION
-          </div>
-          <h1>ガチャ管理</h1>
+          <div class="eyebrow">RASH MASTERS / ADMINISTRATION</div>
+          <h1>カード管理</h1>
         </div>
-
         <div class="admin-profile">
           <span class="profile-icon">♛</span>
           <span id="adminEmail">確認中...</span>
@@ -236,14 +53,13 @@
 
       <section class="welcome-section">
         <div>
-          <span class="section-tag">GACHA DATABASE</span>
-          <h2>ガチャマスター</h2>
-          <p>ガチャの排出率・対象カード・公開状態を管理します。</p>
+          <span class="section-tag">CARD DATABASE</span>
+          <h2>カードマスター</h2>
+          <p>Rash Mastersに登場するカードを管理します。</p>
         </div>
-
         <div class="total-card">
-          <span>REGISTERED GACHAS</span>
-          <strong id="gachaCount">0</strong>
+          <span>REGISTERED CARDS</span>
+          <strong id="cardCount">0</strong>
         </div>
       </section>
 
@@ -254,90 +70,186 @@
         <div class="editor-panel">
           <div class="panel-heading">
             <div>
-              <span class="section-tag">GACHA EDITOR</span>
-              <h2 id="formTitle">新しいガチャを登録</h2>
+              <span class="section-tag">CARD EDITOR</span>
+              <h2 id="formTitle">新しいカードを登録</h2>
             </div>
             <span class="editor-icon">✦</span>
           </div>
 
-          <form id="gachaForm">
-            <div class="form-group">
-              <label for="gachaName">ガチャ名 *</label>
-              <input id="gachaName" maxlength="60" required
-                placeholder="例：伝説のURガチャ">
-            </div>
+          <form id="cardForm">
 
+            <input type="hidden" id="editingId">
+
+            
+<!-- =====================================
+     RASH MASTERS SKILL SETTINGS
+===================================== -->
+
+<div class="skill-settings">
+  <div class="panel-heading">
+    <div>
+      <span class="section-tag">CARD ABILITY</span>
+      <h2>✦ スキル設定</h2>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="skillTrigger">
+      スキル発動タイミング
+    </label>
+
+    <select id="skillTrigger">
+      <option value="NONE">スキルなし</option>
+      <option value="ON_SUMMON">召喚時</option>
+      <option value="ON_ATTACK">攻撃時</option>
+      <option value="PASSIVE">常時</option>
+      <option value="ON_DESTROY">破壊時</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="skillEffect">
+      スキル効果
+    </label>
+
+    <select id="skillEffect" disabled>
+      <option value="NONE">効果なし</option>
+      <option value="DAMAGE">相手モンスターにダメージ</option>
+      <option value="HEAL">自身のカードHP回復</option>
+      <option value="ATK_UP">攻撃力アップ</option>
+      <option value="SHIELD">受けるダメージ軽減</option>
+      <option value="DRAW">カードをドロー</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="skillValue">
+      スキル効果量
+    </label>
+
+    <input
+      type="number"
+      id="skillValue"
+      min="0"
+      max="99999"
+      step="1"
+      value="0"
+      disabled
+    >
+
+    <small class="input-help">
+      ドローの場合は枚数、それ以外は効果量を入力してください。
+    </small>
+  </div>
+
+  <div id="skillPreview" class="skill-preview">
+    このカードにはスキルが設定されていません。
+  </div>
+</div>
+
+            
             <div class="form-group">
-              <label for="gachaDescription">説明</label>
-              <textarea id="gachaDescription" rows="3"
-                maxlength="500"
-                placeholder="ガチャの説明を入力"></textarea>
+              <label for="cardName">カード名 <span>*</span></label>
+              <input
+                type="text"
+                id="cardName"
+                placeholder="例：星界の支配者"
+                maxlength="40"
+                required
+              >
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label for="singleCost">1回の必要コイン</label>
-                <input id="singleCost" type="number"
-                  min="0" max="100000000" step="1"
-                  value="100" required>
+                <label for="rarity">レアリティ <span>*</span></label>
+                <select id="rarity" required>
+                  <option value="N">N</option>
+                  <option value="R">R</option>
+                  <option value="SR">SR</option>
+                  <option value="SSR">SSR</option>
+                  <option value="UR">UR</option>
+                </select>
               </div>
 
               <div class="form-group">
-                <label for="tenCost">10連の必要コイン</label>
-                <input id="tenCost" type="number"
-                  min="0" max="100000000" step="1"
-                  value="1000" required>
+                <label for="cardType">カードタイプ</label>
+                <select id="cardType">
+                  <option value="ATTACK">ATTACK</option>
+                  <option value="DEFENSE">DEFENSE</option>
+                  <option value="SUPPORT">SUPPORT</option>
+                  <option value="SPECIAL">SPECIAL</option>
+                </select>
               </div>
             </div>
 
-            <div class="gacha-section">
-              <h3>RARITY RATES / 排出率</h3>
-              <div id="rateInputs"></div>
-              <p id="rateTotal" class="gacha-note"></p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="attack">攻撃力 <span>*</span></label>
+                <input
+                  type="number"
+                  id="attack"
+                  min="0"
+                  max="99999"
+                  value="100"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="hp">HP <span>*</span></label>
+                <input
+                  type="number"
+                  id="hp"
+                  min="0"
+                  max="99999"
+                  value="100"
+                  required
+                >
+              </div>
             </div>
 
-            <div class="gacha-section">
-              <h3>CARD POOL / 排出対象</h3>
-              <p class="gacha-note">
-                登録済みカードから排出対象を選択します。
+            <div class="form-group">
+              <label for="description">カード説明</label>
+              <textarea
+                id="description"
+                rows="4"
+                maxlength="500"
+                placeholder="カードの能力や説明を入力..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="imagePath">カード画像パス <span>*</span></label>
+              <input
+                type="text"
+                id="imagePath"
+                placeholder="assets/cards/UR/UR001.png"
+                required
+              >
+              <small class="input-help">
+                GitHubリポジトリ内のassets/cards/から始まるパスを入力
+              </small>
+            </div>
+
+            <div class="preview-area">
+              <div class="preview-label">IMAGE PREVIEW</div>
+              <div class="image-preview" id="imagePreview">
+                <span>画像プレビュー</span>
+              </div>
+              <p id="previewStatus" class="preview-status">
+                画像パスを入力すると表示されます
               </p>
-
-              <div class="pool-tools">
-                <input id="cardSearch" type="search"
-                  placeholder="カード名で検索">
-                <button id="selectAllCards" type="button"
-                  class="secondary-button">表示中を選択</button>
-                <button id="clearCards" type="button"
-                  class="secondary-button">選択解除</button>
-              </div>
-
-              <p id="selectedCount" class="gacha-note">選択中：0枚</p>
-              <div id="cardPool" class="pool-list"></div>
-            </div>
-
-            <div class="gacha-section">
-              <h3>PUBLICATION / 公開設定</h3>
-              <label class="publish-label">
-                <input id="enabled" type="checkbox">
-                プレイヤーに公開する
-              </label>
             </div>
 
             <div class="form-actions">
-              <button id="saveButton" type="submit"
-                class="primary-button">＋ ガチャを登録</button>
-              <button id="cancelButton" type="button"
-                class="secondary-button" hidden>
-                編集キャンセル
+              <button type="submit" id="saveButton" class="primary-button">
+                ＋ カードを登録
+              </button>
+              <button type="button" id="cancelButton" class="secondary-button hidden">
+                編集をキャンセル
               </button>
             </div>
 
-            <div style="margin-top:14px">
-              <button id="deleteButton" type="button"
-                class="danger-button" disabled>
-                このガチャを削除
-              </button>
-            </div>
           </form>
         </div>
 
@@ -345,15 +257,31 @@
           <div class="panel-heading list-heading">
             <div>
               <span class="section-tag">REGISTERED DATA</span>
-              <h2>登録済みガチャ</h2>
+              <h2>登録済みカード</h2>
             </div>
             <button id="refreshButton" class="refresh-button">
               ↻ 更新
             </button>
           </div>
 
-          <div id="gachaList" class="card-list">
-            <div class="loading">読み込み中...</div>
+          <div class="filter-area">
+            <input
+              type="search"
+              id="searchInput"
+              placeholder="カード名で検索..."
+            >
+            <select id="filterRarity">
+              <option value="">全レアリティ</option>
+              <option value="N">N</option>
+              <option value="R">R</option>
+              <option value="SR">SR</option>
+              <option value="SSR">SSR</option>
+              <option value="UR">UR</option>
+            </select>
+          </div>
+
+          <div id="cardList" class="card-list">
+            <div class="loading">カードデータを読み込んでいます...</div>
           </div>
         </div>
 
@@ -365,6 +293,6 @@
     </main>
   </div>
 
-  <script type="module" src="../js/admin-gacha.js"></script>
+  <script type="module" src="../js/admin-cards.js"></script>
 </body>
 </html>
