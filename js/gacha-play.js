@@ -107,8 +107,13 @@ let banners = [];
 let cardMap = new Map();
 let currentBanner = null;
 
+// ガチャ詳細の読み込み順序を管理
+let detailGeneration = 0;
+
 let loading = false;
+let loadingGeneration = -1;
 let drawing = false;
+
 let coinBalance = null;
 let coinsInitialized = false;
 
@@ -313,9 +318,18 @@ updateDrawButtons();
 // ========================================
 
 async function loadGachas() {
-  if (loading || drawing) return;
+if (drawing) return;
 
-  loading = true;
+// 同じログイン状態での重複読み込みだけ防止
+if (loading && loadingGeneration === authGeneration) {
+  return;
+}
+
+const generation = authGeneration;
+
+// 現在のログイン状態で読み込みを開始したことを記録
+loading = true;
+loadingGeneration = generation;
 
   showStatus("開催中のガチャを読み込み中...");
 
@@ -325,12 +339,17 @@ async function loadGachas() {
       where("enabled", "==", true)
     );
 
-    const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
 
-    banners = snapshot.docs.map(item => ({
-      ...item.data(),
-      id: item.id
-    }));
+// 読み込み中にログイン状態が変わった場合は中止
+if (generation !== authGeneration) {
+  return;
+}
+
+banners = snapshot.docs.map(item => ({
+  ...item.data(),
+  id: item.id
+}));
 
     banners.sort((a, b) =>
       String(a.name || "").localeCompare(
@@ -354,17 +373,26 @@ async function loadGachas() {
       }
     }
 
-  } catch (error) {
-    console.error("Gacha load error:", error);
-
-    showStatus(
-      "ガチャを読み込めませんでした：" +
-      error.message,
-      true
-    );
-  } finally {
-    loading = false;
+} catch (error) {
+  // 古いログイン状態のエラーは画面に表示しない
+  if (generation !== authGeneration) {
+    return;
   }
+
+  console.error("Gacha load error:", error);
+
+  showStatus(
+    "ガチャを読み込めませんでした：" +
+    error.message,
+    true
+  );
+} finally {
+  // 自分が開始した読み込みの場合だけ状態を解除
+  if (loadingGeneration === generation) {
+    loading = false;
+    loadingGeneration = -1;
+  }
+}
 }
 
 // ========================================
@@ -475,6 +503,12 @@ async function loadCardPool(banner) {
 async function openGacha(id) {
   if (drawing) return;
 
+  // ガチャ詳細の読み込みを開始したログイン状態を記録
+  const generation = authGeneration;
+
+  // 今回の詳細読み込み専用の番号を記録
+  const detailRequest = ++detailGeneration;
+
   const banner = banners.find(
     item => item.id === id
   );
@@ -505,28 +539,74 @@ async function openGacha(id) {
   updateDrawButtons();
 
   try {
-    const loadedCards = await loadCardPool(banner);
+const loadedCards = await loadCardPool(banner);
 
-    if (currentBanner?.id !== id) return;
+// ログイン状態が変わっていたら中止
+if (generation !== authGeneration) {
+  return;
+}
+
+// 新しい詳細読み込みが始まっていたら古い結果を破棄
+if (detailRequest !== detailGeneration) {
+  return;
+}
+
+// 別のガチャが選択されていた場合も中止
+if (currentBanner?.id !== id) {
+  return;
+}
 
     cardMap = loadedCards;
     renderCardPool(banner);
 
-  } catch (error) {
-    console.error("Card pool error:", error);
-
-    $("cardPool").textContent =
-      "カード情報の取得に失敗しました。";
+} catch (error) {
+  // ログインが切り替わっていたら中止
+  if (generation !== authGeneration) {
+    return;
   }
 
-  $("detailArea").scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+  // 新しい詳細読み込みが始まっていたら中止
+  if (detailRequest !== detailGeneration) {
+    return;
+  }
+
+  // 別のガチャが選択されていた場合も中止
+  if (currentBanner?.id !== id) {
+    return;
+  }
+
+  console.error("Card pool error:", error);
+
+  $("cardPool").textContent =
+    "カード情報の取得に失敗しました。";
+}
+
+// ログイン状態が変わっていたらスクロールしない
+if (generation !== authGeneration) {
+  return;
+}
+
+// 新しい詳細読み込みが始まっていたらスクロールしない
+if (detailRequest !== detailGeneration) {
+  return;
+}
+
+// 別のガチャが選択されていた場合もスクロールしない
+if (currentBanner?.id !== id) {
+  return;
+}
+
+$("detailArea").scrollIntoView({
+  behavior: "smooth",
+  block: "start"
+});
 }
 
 function closeDetails() {
   if (drawing) return;
+
+  // 進行中のガチャ詳細読み込みを無効化
+  detailGeneration++;
 
   currentBanner = null;
   cardMap.clear();
@@ -740,11 +820,15 @@ async function checkPendingGachaResult(uid) {
   }
 
   try {
-    const response = await getGachaResult(
-      draw.requestId
-    );
+const response = await getGachaResult(draw.requestId);
 
-    const result = response.data;
+// 通信中にログインが切り替わっていたら
+// 古いプレイヤーの結果を処理しない
+if (auth.currentUser?.uid !== uid) {
+  return false;
+}
+
+const result = response.data;
 
     // Workerから返された結果の形式を確認
 if (
@@ -816,15 +900,17 @@ updateDrawButtons();
 
     return true;
 
-  } catch (error) {
-    console.error(
-      "抽選結果の確認に失敗しました:",
-      error
-    );
-
-    // 通信エラー時は保存データを消さない
+} catch (error) {
+  // ログインが切り替わっていたら
+  // 古いプレイヤーのエラーを処理しない
+  if (auth.currentUser?.uid !== uid) {
     return false;
   }
+
+  console.error("抽選結果の確認に失敗しました:", error);
+  return false;
+}
+  
 }
 
 // 抽選結果を確認できた場合だけ削除
@@ -982,6 +1068,12 @@ clearPendingDraw(uid);
     showStatus(`${count}回召喚が完了しました！`);
 
   } catch (error) {
+    // ログインが切り替わっていたら
+    // 古いプレイヤーのエラー処理を中止
+    if (auth.currentUser?.uid !== uid) {
+      return;
+    }
+
     console.error("Gacha draw error:", error);
 
     showStatus(
@@ -1009,8 +1101,12 @@ clearPendingDraw(uid);
     }
 
   } finally {
-    drawing = false;
-    updateDrawButtons();
+    // 同じプレイヤーの処理だった場合だけ
+    // 抽選中状態とボタン表示を更新する
+    if (auth.currentUser?.uid === uid) {
+      drawing = false;
+      updateDrawButtons();
+    }
   }
 }
 
@@ -1019,8 +1115,15 @@ clearPendingDraw(uid);
 // ========================================
 
 async function showDrawResult(result) {
+  // 結果表示を開始したログイン状態を記録
+  const generation = authGeneration;
   const area = $("resultArea");
   const container = $("resultCards");
+
+  // 結果表示を開始する前にログイン状態を確認
+  if (!auth.currentUser) {
+    return;
+  }
 
   container.replaceChildren();
 
@@ -1065,6 +1168,11 @@ async function showDrawResult(result) {
       }
     })
   );
+
+  // カード情報の取得中にログイン状態が変わっていたら中止
+  if (generation !== authGeneration) {
+    return;
+  }
 
   result.cards.forEach(card => {
     const master = resultCardMap.get(
@@ -1151,14 +1259,59 @@ onAuthStateChanged(auth, async user => {
     unsubscribeUser = null;
   }
 
-  coinBalance = null;
+// ログイン状態が変わったらプレイヤー情報をリセット
+coinBalance = null;
 coinsInitialized = false;
-
-// ログイン状態が変わったら初期化成功フラグをリセット
 coinInitializationConfirmed = false;
 
+// 前のプレイヤーの抽選中状態を引き継がない
+drawing = false;
+
+// 前のプレイヤーのガチャ情報をリセット
+pendingDraw = null;
+currentBanner = null;
+cardMap = new Map();
+banners = [];
+
+// 前のログイン状態で開始した詳細読み込みを無効化
+detailGeneration++;
+
+$("detailArea").hidden = true;
+$("resultArea").hidden = true;
+
+// 前のプレイヤーが開いていたガチャの情報を消去
+$("detailName").textContent = "";
+$("detailDescription").textContent = "";
+
+// 前のプレイヤーの排出対象カード一覧を消去
+$("cardPool").replaceChildren();
+$("poolCount").textContent = "";
+
+// 前のガチャの排出確率表示も消去
+$("rateList").replaceChildren();
+
+// 前のガチャの価格表示もリセット
+$("singlePrice").textContent = "--- COINS";
+$("tenPrice").textContent = "--- COINS";
+
+// ガチャ詳細の内部要素は削除しない
+// 新しいガチャを開いたときに表示内容を更新する
+
+// 前のプレイヤーの抽選結果カードも消去
+$("resultCards").replaceChildren();
+
+// 前のプレイヤーの抽選結果テキストも消去
+$("resultTitle").textContent = "";
+$("resultMessage").textContent = "";
+
+$("gachaList").replaceChildren();
+
+// コイン表示とボタンを更新
 updateCoinDisplay();
 updateDrawButtons();
+
+// 前のプレイヤーのステータスメッセージを消去
+showStatus("");
 
   if (!user) {
     location.replace("login.html");
