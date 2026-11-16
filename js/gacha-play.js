@@ -1,5 +1,5 @@
 
-import { auth, db, app } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged
@@ -15,10 +15,12 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
-import {
-  getFunctions,
-  httpsCallable
-} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-functions.js";
+// ========================================
+// CLOUDFLARE WORKER CONFIG
+// ========================================
+
+const GACHA_API_URL =
+  "https://rash-masters-gacha.lgs-esportsgames.workers.dev";
 
 // ========================================
 // RASH MASTERS GACHA CONFIG
@@ -28,22 +30,72 @@ import {
 // セキュリティテストが完了するまでfalse。
 const GACHA_BACKEND_ENABLED = false;
 
-const FUNCTION_REGION = "asia-northeast1";
+// ========================================
+// CLOUDFLARE WORKER API
+// ========================================
 
-const functions = getFunctions(
-  app,
-  FUNCTION_REGION
-);
+// Firebaseログイン情報を使ってWorkerに接続
+async function callGachaApi(path, body = {}) {
+  const user = auth.currentUser;
 
-const initializePlayerCoins = httpsCallable(
-  functions,
-  "initializePlayerCoins"
-);
+  if (!user) {
+    throw new Error("ログインが必要です。");
+  }
 
-const drawGacha = httpsCallable(
-  functions,
-  "drawGacha"
-);
+  const idToken = await user.getIdToken();
+
+  const response = await fetch(
+    `${GACHA_API_URL}${path}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify(body),
+      cache: "no-store"
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(
+      result.error || "api_request_failed"
+    );
+
+    error.status = response.status;
+    error.code = result.error;
+
+    throw error;
+  }
+
+  return result;
+}
+
+// 初回1,000コイン付与
+async function initializePlayerCoins() {
+  return {
+    data: await callGachaApi("/coins/initialize")
+  };
+}
+
+// ガチャ抽選
+async function drawGacha(body) {
+  return {
+    data: await callGachaApi("/gacha/draw", body)
+  };
+}
+
+// 抽選結果の確認
+async function getGachaResult(requestId) {
+  return {
+    data: await callGachaApi(
+      "/gacha/result",
+      { requestId }
+    )
+  };
+}
 
 const $ = id => document.getElementById(id);
 
@@ -112,13 +164,32 @@ function updateDrawButtons() {
   const singleCost = banner?.singleCost;
   const tenCost = banner?.tenCost;
 
-  const ready =
-    GACHA_BACKEND_ENABLED &&
-    coinsInitialized &&
-    !drawing &&
-    !!banner &&
-    coinBalance !== null;
+  // ログイン中のユーザーを確認
+  const uid = auth.currentUser?.uid;
 
+  // ブラウザに保存された未確認抽選を確認
+  let hasPendingDraw = pendingDraw !== null;
+
+  if (uid) {
+    const savedDraw = loadPendingDraw(uid);
+
+    if (savedDraw) {
+      hasPendingDraw = true;
+    }
+  }
+
+  // 抽選可能な状態か判定
+  const ready =
+  GACHA_BACKEND_ENABLED &&
+  coinInitializationConfirmed &&
+  coinsInitialized &&
+  !drawing &&
+  !hasPendingDraw &&
+  !!uid &&
+  !!banner &&
+  coinBalance !== null;
+
+  // 1連ガチャ
   $("singleButton").disabled = !(
     ready &&
     Number.isSafeInteger(singleCost) &&
@@ -126,6 +197,7 @@ function updateDrawButtons() {
     coinBalance >= singleCost
   );
 
+  // 10連ガチャ
   $("tenButton").disabled = !(
     ready &&
     Number.isSafeInteger(tenCost) &&
@@ -207,8 +279,14 @@ async function ensureInitialCoins(generation) {
     const result = response.data;
 
     if (!result?.success) {
-      throw new Error("初期化に失敗しました。");
-    }
+  throw new Error("初期化に失敗しました。");
+}
+
+// Workerから初期化成功の応答を受け取った
+coinInitializationConfirmed = true;
+
+// ガチャボタンの状態を更新
+updateDrawButtons();
 
     if (result.granted) {
       showStatus(
@@ -561,9 +639,202 @@ function renderCardPool(banner) {
 // GACHA DRAW
 // ========================================
 
-// 通信失敗時に別のIDで再抽選しないよう、
-// 未確認のリクエストを保持する。
+// ========================================
+// PENDING GACHA DRAW STORAGE
+// ========================================
+
 let pendingDraw = null;
+
+let coinInitializationConfirmed = false;
+
+// アカウントごとに保存先を分離
+function pendingDrawKey(uid) {
+  return `rash-masters:pending-gacha:${uid}`;
+}
+
+// 未確認の抽選情報を保存
+function savePendingDraw(uid, draw) {
+  localStorage.setItem(
+    pendingDrawKey(uid),
+    JSON.stringify(draw)
+  );
+
+  pendingDraw = draw;
+}
+
+// 保存済みの抽選情報を読み込む
+function loadPendingDraw(uid) {
+  try {
+    const raw = localStorage.getItem(
+      pendingDrawKey(uid)
+    );
+
+    if (!raw) return null;
+
+    const draw = JSON.parse(raw);
+
+    if (
+      !draw ||
+      typeof draw.gachaId !== "string" ||
+      ![1, 10].includes(draw.count) ||
+      typeof draw.requestId !== "string" ||
+      !/^[0-9a-f-]{36}$/i.test(draw.requestId)
+    ) {
+      throw new Error("Invalid pending draw");
+    }
+
+    return draw;
+  } catch (error) {
+    console.error(
+      "Pending draw load error:",
+      error
+    );
+
+    // 不正な保存データは勝手に削除しない
+    return { invalid: true };
+  }
+}
+
+// ========================================
+// RESTORE PENDING GACHA DRAW
+// ========================================
+
+// ページ更新後に未確認の抽選情報を復元
+function restorePendingDraw(uid) {
+  const savedDraw = loadPendingDraw(uid);
+
+  if (!savedDraw) {
+    pendingDraw = null;
+    return false;
+  }
+
+  if (savedDraw.invalid) {
+    pendingDraw = null;
+
+    console.warn(
+      "保存された抽選情報を確認できません。"
+    );
+
+    return true;
+  }
+
+  pendingDraw = savedDraw;
+
+  console.log(
+    "未確認のガチャ抽選を復元しました:",
+    pendingDraw.requestId
+  );
+
+  return true;
+}
+
+// ========================================
+// CHECK PENDING GACHA RESULT
+// ========================================
+
+async function checkPendingGachaResult(uid) {
+  const draw = loadPendingDraw(uid);
+
+  if (!draw || draw.invalid) {
+    return false;
+  }
+
+  try {
+    const response = await getGachaResult(
+      draw.requestId
+    );
+
+    const result = response.data;
+
+    // Workerから返された結果の形式を確認
+if (
+  result?.found === true &&
+  (
+    result.success !== true ||
+    !Array.isArray(result.cards) ||
+    result.requestId !== draw.requestId ||
+    result.gachaId !== draw.gachaId ||
+    result.count !== draw.count ||
+    result.cards.length !== draw.count ||
+    !result.cards.every(
+    card =>
+    card &&
+    typeof card.cardId === "string" &&
+    card.cardId.length > 0 ) ||
+    !Number.isSafeInteger(result.cost) ||
+    result.cost < 0 ||
+    !Number.isSafeInteger(result.remainingCoins) ||
+    result.remainingCoins < 0 )
+) {
+  console.error(
+    "復元した抽選結果の形式が不正です。",
+    result
+  );
+
+  // 安全のため抽選IDを保持する
+  return false;
+}
+
+    if (!result.found) {
+      console.warn(
+        "抽選結果はまだ確認できません:",
+        draw.requestId
+      );
+
+      // 未確認なので保存データは残す
+      return false;
+    }
+
+    // ログインユーザーが途中で変わっていないか確認
+    if (auth.currentUser?.uid !== uid) {
+      return false;
+    }
+
+    // 抽選結果を表示
+await showDrawResult(result);
+
+// 表示中にログインユーザーが変わっていないか再確認
+if (auth.currentUser?.uid !== uid) {
+  return false;
+}
+
+// 結果を正常に確認できたので削除
+clearPendingDraw(uid);
+
+// 復元した抽選結果の残高を反映
+if (Number.isSafeInteger(result.remainingCoins)) {
+  coinBalance = result.remainingCoins;
+  updateCoinDisplay();
+}
+
+// 未確認抽選が解消されたのでボタンを更新
+updateDrawButtons();
+
+    console.log(
+      "未確認のガチャ抽選結果を復元しました。"
+    );
+
+    return true;
+
+  } catch (error) {
+    console.error(
+      "抽選結果の確認に失敗しました:",
+      error
+    );
+
+    // 通信エラー時は保存データを消さない
+    return false;
+  }
+}
+
+// 抽選結果を確認できた場合だけ削除
+function clearPendingDraw(uid) {
+  localStorage.removeItem(
+    pendingDrawKey(uid)
+  );
+
+  pendingDraw = null;
+}
 
 async function performDraw(count) {
   if (!GACHA_BACKEND_ENABLED) {
@@ -576,15 +847,43 @@ async function performDraw(count) {
 
   if (drawing || !currentBanner) return;
 
-  if (!coinsInitialized || coinBalance === null) {
+  const user = auth.currentUser;
+
+  if (!user) {
+    showStatus("ログインが必要です。", true);
+    return;
+  }
+
+  const uid = user.uid;
+
+  // 保存済みの未確認抽選もチェック
+  const savedDraw = loadPendingDraw(uid);
+
+  if (pendingDraw || savedDraw) {
     showStatus(
-      "コインの初期化が完了していません。",
+      "未確認のガチャ抽選があります。" +
+      "結果の確認が完了するまで新しい抽選はできません。",
       true
     );
     return;
   }
 
+  // Workerの初期化成功とFirestoreの残高を確認
+if (
+  !coinInitializationConfirmed ||
+  !coinsInitialized ||
+  coinBalance === null
+) {
+  showStatus(
+    "コインの初期化が完了していません。" +
+    "しばらく待ってから再度お試しください。",
+    true
+  );
+  return;
+}
+
   const gachaId = currentBanner.id;
+
   const cost = count === 1
     ? currentBanner.singleCost
     : currentBanner.tenCost;
@@ -601,31 +900,29 @@ async function performDraw(count) {
     return;
   }
 
-  // 未確認の抽選がある場合は、
-  // 別の抽選を開始させない。
-  if (pendingDraw) {
+  const requestId = crypto.randomUUID();
+
+  // 抽選前にIDを保存
+  try {
+    savePendingDraw(uid, {
+      gachaId,
+      count,
+      requestId
+    });
+  } catch (error) {
+    console.error("Pending draw save error:", error);
+
     showStatus(
-      "結果未確認の抽選があります。" +
-      "画面を更新せず、運営に確認してください。",
+      "抽選情報を保存できませんでした。",
       true
     );
     return;
   }
 
-  const requestId = crypto.randomUUID();
-
-  pendingDraw = {
-    gachaId,
-    count,
-    requestId
-  };
-
   drawing = true;
   updateDrawButtons();
 
-  showStatus(
-    `${count}回召喚を処理しています...`
-  );
+  showStatus(`${count}回召喚を処理しています...`);
 
   try {
     const response = await drawGacha({
@@ -637,42 +934,79 @@ async function performDraw(count) {
     const result = response.data;
 
     if (
-      !result?.success ||
-      !Array.isArray(result.cards)
-    ) {
-      throw new Error(
-        "サーバーからの抽選結果が不正です。"
-      );
+  result?.success !== true ||
+  result.requestId !== requestId ||
+  result.gachaId !== gachaId ||
+  result.count !== count ||
+  !Array.isArray(result.cards) ||
+  result.cards.length !== count ||
+  !result.cards.every(
+  card =>
+    card &&
+    typeof card.cardId === "string" &&
+    card.cardId.length > 0
+  ) ||
+  !Number.isSafeInteger(result.cost) ||
+  result.cost < 0 ||
+  result.cost !== cost ||
+  !Number.isSafeInteger(result.remainingCoins) ||
+  result.remainingCoins < 0
+      
+) {
+  throw new Error(
+    "サーバーからの抽選結果が不正です。"
+  );
+}
+
+    // ログインユーザーが変わっていないか確認
+    if (auth.currentUser?.uid !== uid) {
+      return;
     }
 
-    // 成功した抽選は再送しない
-    pendingDraw = null;
+    // 結果を表示
+await showDrawResult(result);
 
-    if (
-      Number.isSafeInteger(result.remainingCoins)
-    ) {
+// 表示中にログインユーザーが変わっていないか確認
+if (auth.currentUser?.uid !== uid) {
+  return;
+}
+
+// 結果の表示まで成功した場合のみ削除
+clearPendingDraw(uid);
+
+    if (Number.isSafeInteger(result.remainingCoins)) {
       coinBalance = result.remainingCoins;
       updateCoinDisplay();
     }
 
-    await showDrawResult(result);
-
-    showStatus(
-      `${count}回召喚が完了しました！`
-    );
+    showStatus(`${count}回召喚が完了しました！`);
 
   } catch (error) {
     console.error("Gacha draw error:", error);
 
-    // 通信エラーの場合、サーバー側で
-    // 抽選が成功している可能性がある。
-    // pendingDrawは保持して二重抽選を防ぐ。
     showStatus(
-      "抽選結果を確認できませんでした。" +
-      "再度召喚せず、運営に確認してください。" +
-      "詳細：" + (error.message || "通信エラー"),
-      true
+      "抽選結果を確認しています..."
     );
+
+    // 同じrequestIdで結果を問い合わせる
+    const recovered = await checkPendingGachaResult(uid);
+
+    if (auth.currentUser?.uid !== uid) {
+      return;
+    }
+
+    if (recovered) {
+      showStatus(
+        "抽選結果を復元しました！"
+      );
+    } else {
+      showStatus(
+        "抽選結果を確認できませんでした。" +
+        "抽選IDは保存されています。" +
+        "新しい抽選は行わず、後ほど再確認してください。",
+        true
+      );
+    }
 
   } finally {
     drawing = false;
@@ -818,10 +1152,13 @@ onAuthStateChanged(auth, async user => {
   }
 
   coinBalance = null;
-  coinsInitialized = false;
+coinsInitialized = false;
 
-  updateCoinDisplay();
-  updateDrawButtons();
+// ログイン状態が変わったら初期化成功フラグをリセット
+coinInitializationConfirmed = false;
+
+updateCoinDisplay();
+updateDrawButtons();
 
   if (!user) {
     location.replace("login.html");
@@ -836,18 +1173,77 @@ onAuthStateChanged(auth, async user => {
   $("playerArea").hidden = false;
   $("gachaArea").hidden = false;
 
-  // Firestoreから残高を監視
+  // ========================================
+  // RESTORE PENDING DRAW
+  // ========================================
+
+  // ログイン直後に未確認の抽選IDを復元
+  const hasPendingDraw = restorePendingDraw(user.uid);
+
+  // 復元した状態をボタンに反映
+  updateDrawButtons();
+
+  // ========================================
+  // WATCH PLAYER COINS
+  // ========================================
+
+  // Firestoreからコイン残高を監視
   watchPlayerCoins(user, generation);
 
-  // デプロイ済みの場合のみ初期コインを付与
+  // ========================================
+  // INITIALIZE PLAYER COINS
+  // ========================================
+
   if (GACHA_BACKEND_ENABLED) {
     await ensureInitialCoins(generation);
   }
 
   if (generation !== authGeneration) return;
 
+  // ========================================
+  // LOAD GACHA DATA
+  // ========================================
+
+  // ガチャ一覧とカード情報を読み込む
   await loadGachas();
+
+  if (generation !== authGeneration) return;
+
+  // ========================================
+  // CHECK PENDING GACHA RESULT
+  // ========================================
+
+  // ガチャ情報の読み込み後に抽選結果を確認
+  if (hasPendingDraw && GACHA_BACKEND_ENABLED) {
+    const pendingUid = user.uid;
+
+    const recovered = await checkPendingGachaResult(
+      pendingUid
+    );
+
+    if (generation !== authGeneration) return;
+
+    if (!recovered) {
+      console.warn(
+        "抽選結果を確認できませんでした。" +
+        "未確認の抽選IDは保持します。"
+      );
+
+      showStatus(
+        "未確認のガチャ抽選があります。" +
+        "結果を確認できるまで新しい抽選はできません。",
+        true
+      );
+    }
+  }
+
+  // ========================================
+  // FINAL BUTTON UPDATE
+  // ========================================
+
+  updateDrawButtons();
 });
+
 
 // ========================================
 // INITIAL STATE
