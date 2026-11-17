@@ -874,11 +874,16 @@ if (
       return false;
     }
 
-    // 抽選結果を表示
-await showDrawResult(result);
+// 抽選結果を表示
+const displayed = await showDrawResult(result);
 
 // 表示中にログインユーザーが変わっていないか再確認
 if (auth.currentUser?.uid !== uid) {
+  return false;
+}
+
+// 結果表示が中止された場合は抽選IDを削除しない
+if (displayed !== true) {
   return false;
 }
 
@@ -940,10 +945,13 @@ async function performDraw(count) {
     return;
   }
 
-  const uid = user.uid;
+const uid = user.uid;
 
-  // 保存済みの未確認抽選もチェック
-  const savedDraw = loadPendingDraw(uid);
+// 抽選開始時のログイン状態を記録
+const generation = authGeneration;
+
+// 保存済みの未確認抽選もチェック
+const savedDraw = loadPendingDraw(uid);
 
   if (pendingDraw || savedDraw) {
     showStatus(
@@ -1044,16 +1052,27 @@ if (
   );
 }
 
-    // ログインユーザーが変わっていないか確認
-    if (auth.currentUser?.uid !== uid) {
-      return;
-    }
+// ログイン状態が変わっていたら古い抽選結果を処理しない
+if (
+  generation !== authGeneration ||
+  auth.currentUser?.uid !== uid
+) {
+  return;
+}
 
-    // 結果を表示
-await showDrawResult(result);
+// 結果を表示
+const displayed = await showDrawResult(result);
 
-// 表示中にログインユーザーが変わっていないか確認
-if (auth.currentUser?.uid !== uid) {
+// 結果表示中にログイン状態が変わっていたら中止
+if (
+  generation !== authGeneration ||
+  auth.currentUser?.uid !== uid
+) {
+  return;
+}
+
+// 結果表示が中止された場合は抽選IDを削除しない
+if (displayed !== true) {
   return;
 }
 
@@ -1067,12 +1086,14 @@ clearPendingDraw(uid);
 
     showStatus(`${count}回召喚が完了しました！`);
 
-  } catch (error) {
-    // ログインが切り替わっていたら
-    // 古いプレイヤーのエラー処理を中止
-    if (auth.currentUser?.uid !== uid) {
-      return;
-    }
+} catch (error) {
+  // ログイン状態が変わっていたら古いエラー処理を中止
+  if (
+    generation !== authGeneration ||
+    auth.currentUser?.uid !== uid
+  ) {
+    return;
+  }
 
     console.error("Gacha draw error:", error);
 
@@ -1210,10 +1231,13 @@ async function showDrawResult(result) {
 
   area.hidden = false;
 
-  area.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+area.scrollIntoView({
+  behavior: "smooth",
+  block: "start"
+});
+
+// 抽選結果の表示が完了したことを返す
+return true;
 }
 
 // ========================================
